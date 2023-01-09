@@ -30,7 +30,6 @@ class SSHTraceWrapper {
 #else
   struct perf_buffer* pb = nullptr;
 #endif
-  moodycamel::BlockingConcurrentQueue<char*> q;
 
   // Called by handler functions to populate the queue with JSON data
   void push(std::string);
@@ -39,6 +38,7 @@ class SSHTraceWrapper {
   int bpf_err_code;
 
  private:
+  moodycamel::BlockingConcurrentQueue<char*> q;
   std::unique_ptr<std::thread> bpf_poll_thread;
 };
 
