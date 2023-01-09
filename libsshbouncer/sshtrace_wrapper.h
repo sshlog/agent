@@ -35,6 +35,7 @@ class SSHTraceWrapper {
   // Called by handler functions to populate the queue with JSON data
   void push(std::string);
 
+  void queue_event(void* event_struct);
   int bpf_err_code;
 
  private:

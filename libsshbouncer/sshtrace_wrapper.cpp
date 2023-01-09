@@ -99,8 +99,7 @@ SSHTraceWrapper::SSHTraceWrapper() {
     e.conn = conn;
     e.event_type = SSHTRACE_EVENT_NEW_CONNECTION;
     e.ptm_pid = conn.ptm_tgid;
-    char* json_data = serialize_event(&e);
-    q.enqueue(json_data);
+    this->queue_event(&e);
   }
 
   /* Set up perf buffer polling */
@@ -150,6 +149,11 @@ char* SSHTraceWrapper::poll(int timeout_ms) {
   // return themem;
 }
 
+void SSHTraceWrapper::queue_event(void* event_struct) {
+  char* json_data = serialize_event(event_struct);
+  q.enqueue(json_data);
+}
+
 static int libbpf_print_fn(enum libbpf_print_level level, const char* format, va_list args) {
   bool verbose = false;
   if (level == LIBBPF_DEBUG && !verbose)
@@ -182,9 +186,7 @@ static void handle_event(void* ctx, int cpu, void* data, uint32_t data_sz) {
   case SSHTRACE_EVENT_COMMAND_START:
   case SSHTRACE_EVENT_COMMAND_END:
   case SSHTRACE_EVENT_TERMINAL_UPDATE: {
-    char* json_data = serialize_event(data);
-    PLOG_VERBOSE << json_data;
-    wrapper->q.enqueue(json_data);
+    wrapper->queue_event(data);
     break;
   }
   default:
