@@ -8,14 +8,19 @@
 
 #include "sshtrace_types.h"
 
-#define SSHTRACE_EVENT_NEW_CONNECTION 1
-#define SSHTRACE_EVENT_CLOSE_CONNECTION 2
-#define SSHTRACE_EVENT_COMMAND_START 3
-#define SSHTRACE_EVENT_COMMAND_END 4
-// Signals us to grab additional conn data from userspace
-#define SSHTRACE_EVENT_BASH_CLONED 5
+#define SSHTRACE_EVENT_NEW_CONNECTION 101
+// Triggered from userspace code after conn details have been parsed
+#define SSHTRACE_EVENT_ESTABLISHED_CONNECTION 102
+#define SSHTRACE_EVENT_CLOSE_CONNECTION 103
+#define SSHTRACE_EVENT_COMMAND_START 201
+
+#define SSHTRACE_EVENT_COMMAND_END 202
 // Every time the terminal updates, this pushes the data
-#define SSHTRACE_EVENT_TERMINAL_UPDATE 6
+#define SSHTRACE_EVENT_TERMINAL_UPDATE 301
+
+// Signals us to grab additional conn data from userspace
+// Only used internally
+#define SSHTRACE_EVENT_BASH_CLONED 1
 
 struct event {
   int32_t event_type;
