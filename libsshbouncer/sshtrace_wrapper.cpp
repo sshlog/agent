@@ -100,6 +100,11 @@ SSHTraceWrapper::SSHTraceWrapper() {
     e.event_type = SSHTRACE_EVENT_NEW_CONNECTION;
     e.ptm_pid = conn.ptm_tgid;
     this->queue_event(&e);
+
+    // Send The established connection next.  This will send duplicate information
+    // but it is consistent with how we send new connections as they're discovered.
+    e.event_type = SSHTRACE_EVENT_ESTABLISHED_CONNECTION;
+    this->queue_event(&e);
   }
 
   /* Set up perf buffer polling */
@@ -220,6 +225,13 @@ static void handle_event(void* ctx, int cpu, void* data, uint32_t data_sz) {
       conn.tty_id = pts_parser.tty_id;
       conn.shell_tgid = e->bash_pid;
       bpf_map__update_elem(skel->maps.connections, &e->ptm_pid, sizeof(e->ptm_pid), &conn, sizeof(conn), BPF_EXIST);
+
+      // Trigger an event manually
+      struct connection_event ce;
+      ce.conn = conn;
+      ce.event_type = SSHTRACE_EVENT_ESTABLISHED_CONNECTION;
+      ce.ptm_pid = conn.ptm_tgid;
+      wrapper->queue_event(&ce);
     }
   }
 

@@ -10,6 +10,8 @@ static const char* get_event_str(int event_type) {
   switch (event_type) {
   case SSHTRACE_EVENT_NEW_CONNECTION:
     return "connection_new";
+  case SSHTRACE_EVENT_ESTABLISHED_CONNECTION:
+    return "connection_established";
   case SSHTRACE_EVENT_CLOSE_CONNECTION:
     return "connection_close";
   case SSHTRACE_EVENT_COMMAND_START:
@@ -78,6 +80,7 @@ char* serialize_event(void* event_struct) {
   yyjson_mut_obj_add_str(doc, root, "event_type", get_event_str(e_generic->event_type));
 
   if (e_generic->event_type == SSHTRACE_EVENT_NEW_CONNECTION ||
+      e_generic->event_type == SSHTRACE_EVENT_ESTABLISHED_CONNECTION ||
       e_generic->event_type == SSHTRACE_EVENT_CLOSE_CONNECTION) {
 
     const struct connection_event* e = (const struct connection_event*) event_struct;
@@ -95,6 +98,8 @@ char* serialize_event(void* event_struct) {
     yyjson_mut_obj_add_int(doc, root, "ptm_pid", e->ptm_pid);
     yyjson_mut_obj_add_str(doc, root, "terminal_data", e->terminal_data);
     yyjson_mut_obj_add_int(doc, root, "data_len", e->data_len);
+  } else {
+    PLOG_WARNING << "Unknown event type sent for serialization: " << e_generic->event_type;
   }
 
   // To string, minified
