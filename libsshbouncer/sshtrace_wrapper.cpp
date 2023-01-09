@@ -200,26 +200,26 @@ static void handle_event(void* ctx, int cpu, void* data, uint32_t data_sz) {
 
     PtsParser pts_parser(e->pts_pid);
 
-    if (pts_parser.pts_fd_1 != PTS_UNKNOWN) {
-      // int connections_fd = bpf_map__fd(skel->maps.connections);
-      struct connection conn;
-      int success =
-          bpf_map__lookup_elem(skel->maps.connections, &e->ptm_pid, sizeof(e->ptm_pid), &conn, sizeof(conn), 0);
-
-      if (success != 0) {
-        PLOG_WARNING << "Cannot find connection info for ptm PID " << e->ptm_pid;
-      } else {
-        conn.pts_fd = pts_parser.pts_fd_1;
-        conn.pts_fd2 = pts_parser.pts_fd_2;
-        conn.pts_fd3 = pts_parser.pts_fd_3;
-        conn.user_id = pts_parser.user_id;
-        strcpy(conn.username, getUser(conn.user_id).c_str());
-        conn.tty_id = pts_parser.tty_id;
-        conn.shell_tgid = e->bash_pid;
-        bpf_map__update_elem(skel->maps.connections, &e->ptm_pid, sizeof(e->ptm_pid), &conn, sizeof(conn), BPF_EXIST);
-      }
-    } else {
+    if (pts_parser.pts_fd_1 == PTS_UNKNOWN) {
+      // Warn but this could still be a file transfer or SSH command w/o tty
       PLOG_WARNING << "Cannot parse FD/TTY data for ptm PID " << e->ptm_pid;
+    }
+
+    // int connections_fd = bpf_map__fd(skel->maps.connections);
+    struct connection conn;
+    int success = bpf_map__lookup_elem(skel->maps.connections, &e->ptm_pid, sizeof(e->ptm_pid), &conn, sizeof(conn), 0);
+
+    if (success != 0) {
+      PLOG_WARNING << "Cannot find connection info for ptm PID " << e->ptm_pid;
+    } else {
+      conn.pts_fd = pts_parser.pts_fd_1;
+      conn.pts_fd2 = pts_parser.pts_fd_2;
+      conn.pts_fd3 = pts_parser.pts_fd_3;
+      conn.user_id = pts_parser.user_id;
+      strcpy(conn.username, getUser(conn.user_id).c_str());
+      conn.tty_id = pts_parser.tty_id;
+      conn.shell_tgid = e->bash_pid;
+      bpf_map__update_elem(skel->maps.connections, &e->ptm_pid, sizeof(e->ptm_pid), &conn, sizeof(conn), BPF_EXIST);
     }
   }
 
