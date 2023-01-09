@@ -9,7 +9,7 @@ namespace sshbouncer {
 #define PTS_UNKNOWN -1
 
 class PtsParser {
-public:
+ public:
   PtsParser(int pts_pid);
   virtual ~PtsParser();
 
@@ -21,7 +21,7 @@ public:
 
   int user_id;
 
-private:
+ private:
   void find_pts_fds(int32_t pid);
   void find_tty_id(int32_t pid, int32_t fd);
   void find_user_id(int32_t pid);
