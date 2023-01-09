@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <plog/Log.h>
+#include <pwd.h>
 #include <sstream>
 #include <stdio.h>
 #include <string.h>
@@ -13,6 +14,13 @@
 #include <unistd.h>
 
 namespace sshbouncer {
+
+static std::string getUser(uid_t uid) {
+  struct passwd* pws;
+  pws = getpwuid(uid);
+  return pws->pw_name;
+}
+
 PtsParser::PtsParser(int pts_pid) {
   this->pts_fd_1 = PTS_UNKNOWN;
   this->pts_fd_2 = PTS_UNKNOWN;
@@ -126,4 +134,12 @@ void PtsParser::find_user_id(int32_t pid) {
   this->user_id = process.get_status().uid.real;
 }
 
+void PtsParser::populate_connection(struct connection* conn) {
+  conn->pts_fd = this->pts_fd_1;
+  conn->pts_fd2 = this->pts_fd_2;
+  conn->pts_fd3 = this->pts_fd_3;
+  conn->user_id = this->user_id;
+  strcpy(conn->username, getUser(conn->user_id).c_str());
+  conn->tty_id = this->tty_id;
+}
 } // namespace sshbouncer

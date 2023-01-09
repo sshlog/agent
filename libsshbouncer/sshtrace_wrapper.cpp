@@ -166,11 +166,6 @@ static int libbpf_print_fn(enum libbpf_print_level level, const char* format, va
   return vfprintf(stderr, format, args);
 }
 
-static std::string getUser(uid_t uid) {
-  struct passwd* pws;
-  pws = getpwuid(uid);
-  return pws->pw_name;
-}
 #ifdef SSHTRACE_USE_RINGBUF
 static int handle_event(void* ctx, void* data, size_t data_sz) {
 #else
@@ -217,12 +212,8 @@ static void handle_event(void* ctx, int cpu, void* data, uint32_t data_sz) {
     if (success != 0) {
       PLOG_WARNING << "Cannot find connection info for ptm PID " << e->ptm_pid;
     } else {
-      conn.pts_fd = pts_parser.pts_fd_1;
-      conn.pts_fd2 = pts_parser.pts_fd_2;
-      conn.pts_fd3 = pts_parser.pts_fd_3;
-      conn.user_id = pts_parser.user_id;
-      strcpy(conn.username, getUser(conn.user_id).c_str());
-      conn.tty_id = pts_parser.tty_id;
+      pts_parser.populate_connection(&conn);
+
       conn.shell_tgid = e->bash_pid;
       bpf_map__update_elem(skel->maps.connections, &e->ptm_pid, sizeof(e->ptm_pid), &conn, sizeof(conn), BPF_EXIST);
 
@@ -288,8 +279,6 @@ static struct connection create_connection(struct ssh_session existing_session) 
   c.ptm_tgid = existing_session.ptm_pid;
   c.shell_tgid = existing_session.bash_pid;
   c.start_time = existing_session.start_time;
-  c.user_id = existing_session.user_id;
-  strcpy(c.username, getUser(c.user_id).c_str());
 
   // Convert IP address back out to integer
   struct sockaddr_in sa;
@@ -302,10 +291,7 @@ static struct connection create_connection(struct ssh_session existing_session) 
   c.tcp_info.server_port = existing_session.server_port;
 
   PtsParser pts_info(existing_session.pts_pid);
-  c.pts_fd = pts_info.pts_fd_1;
-  c.pts_fd2 = pts_info.pts_fd_2;
-  c.pts_fd3 = pts_info.pts_fd_3;
-  c.tty_id = pts_info.tty_id;
+  pts_info.populate_connection(&c);
 
   return c;
 }

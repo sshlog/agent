@@ -1,6 +1,7 @@
 #ifndef SSHBOUNCER_PTS_PARSER_H
 #define SSHBOUNCER_PTS_PARSER_H
 
+#include "bpf/sshtrace_types.h"
 #include <stdint.h>
 #include <vector>
 
@@ -20,6 +21,8 @@ class PtsParser {
   int tty_id;
 
   int user_id;
+
+  void populate_connection(struct connection* conn);
 
  private:
   void find_pts_fds(int32_t pid);
