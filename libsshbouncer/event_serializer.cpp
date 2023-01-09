@@ -1,0 +1,113 @@
+#include "event_serializer.h"
+#include "bpf/sshtrace_events.h"
+#include "event_serializer.h"
+#include <arpa/inet.h>
+#include <plog/Log.h>
+#include <string>
+#include <yyjson.h>
+
+static const char* get_event_str(int event_type) {
+  switch (event_type) {
+  case SSHTRACE_EVENT_NEW_CONNECTION:
+    return "connection_new";
+  case SSHTRACE_EVENT_CLOSE_CONNECTION:
+    return "connection_close";
+  case SSHTRACE_EVENT_COMMAND_START:
+    return "command_start";
+  case SSHTRACE_EVENT_COMMAND_END:
+    return "command_finish";
+  case SSHTRACE_EVENT_TERMINAL_UPDATE:
+    return "terminal_update";
+  default:
+    return "unknown";
+  }
+}
+
+static void serialize_connection(const struct connection* conn, yyjson_mut_doc* doc, yyjson_mut_val* root) {
+
+  yyjson_mut_obj_add_int(doc, root, "user_id", conn->user_id);
+  yyjson_mut_obj_add_str(doc, root, "username", conn->username);
+
+  yyjson_mut_obj_add_int(doc, root, "pts_pid", conn->pts_tgid);
+  yyjson_mut_obj_add_int(doc, root, "shell_pid", conn->shell_tgid);
+  yyjson_mut_obj_add_int(doc, root, "tty_id", conn->tty_id);
+
+  yyjson_mut_obj_add_int(doc, root, "start_time", conn->start_time);
+  yyjson_mut_obj_add_int(doc, root, "end_time", conn->end_time);
+
+  struct in_addr ip_addr;
+
+  yyjson_mut_val* tcp_info_val = yyjson_mut_obj(doc);
+  ip_addr.s_addr = conn->tcp_info.server_ip;
+  if (conn->tcp_info.server_ip == 0)
+    yyjson_mut_obj_add_str(doc, tcp_info_val, "server_ip", "0");
+  else
+    yyjson_mut_obj_add_str(doc, tcp_info_val, "server_ip", inet_ntoa(ip_addr));
+  ip_addr.s_addr = conn->tcp_info.client_ip;
+  if (conn->tcp_info.client_ip == 0)
+    yyjson_mut_obj_add_str(doc, tcp_info_val, "client_ip", "0");
+  else
+    yyjson_mut_obj_add_str(doc, tcp_info_val, "client_ip", inet_ntoa(ip_addr));
+  yyjson_mut_obj_add_int(doc, tcp_info_val, "server_port", conn->tcp_info.server_port);
+  yyjson_mut_obj_add_int(doc, tcp_info_val, "client_port", conn->tcp_info.client_port);
+  yyjson_mut_obj_add_val(doc, root, "tcp_info", tcp_info_val);
+}
+static void serialize_command(const struct command* cmd, yyjson_mut_doc* doc, yyjson_mut_val* root) {
+
+  yyjson_mut_obj_add_str(doc, root, "filename", cmd->filename);
+  yyjson_mut_obj_add_int(doc, root, "start_time", cmd->start_time);
+  yyjson_mut_obj_add_int(doc, root, "end_time", cmd->end_time);
+
+  yyjson_mut_obj_add_int(doc, root, "stdout_size", cmd->stdout_offset);
+  yyjson_mut_obj_add_str(doc, root, "stdout", cmd->stdout);
+  yyjson_mut_obj_add_str(doc, root, "args", cmd->args);
+
+  yyjson_mut_obj_add_int(doc, root, "parent_pid", cmd->parent_tgid);
+  yyjson_mut_obj_add_int(doc, root, "pid", cmd->current_tgid);
+}
+
+char* serialize_event(void* event_struct) {
+
+  const struct event* e_generic = (const struct event*) event_struct;
+
+  // Create a mutable doc
+  yyjson_mut_doc* doc = yyjson_mut_doc_new(NULL);
+  yyjson_mut_val* root = yyjson_mut_obj(doc);
+  yyjson_mut_doc_set_root(doc, root);
+
+  yyjson_mut_obj_add_str(doc, root, "event_type", get_event_str(e_generic->event_type));
+
+  if (e_generic->event_type == SSHTRACE_EVENT_NEW_CONNECTION ||
+      e_generic->event_type == SSHTRACE_EVENT_CLOSE_CONNECTION) {
+
+    const struct connection_event* e = (const struct connection_event*) event_struct;
+    yyjson_mut_obj_add_int(doc, root, "ptm_pid", e->ptm_pid);
+    serialize_connection(&e->conn, doc, root);
+
+  } else if (e_generic->event_type == SSHTRACE_EVENT_COMMAND_START ||
+             e_generic->event_type == SSHTRACE_EVENT_COMMAND_END) {
+    const struct command_event* e = (const struct command_event*) event_struct;
+    yyjson_mut_obj_add_int(doc, root, "ptm_pid", e->ptm_pid);
+    serialize_command(&e->cmd, doc, root);
+  } else if (e_generic->event_type == SSHTRACE_EVENT_TERMINAL_UPDATE) {
+
+    const struct terminal_update_event* e = (const struct terminal_update_event*) event_struct;
+    yyjson_mut_obj_add_int(doc, root, "ptm_pid", e->ptm_pid);
+    yyjson_mut_obj_add_str(doc, root, "terminal_data", e->terminal_data);
+    yyjson_mut_obj_add_int(doc, root, "data_len", e->data_len);
+  }
+
+  // To string, minified
+  char* json = yyjson_mut_write(doc, 0, NULL);
+
+  // Free the doc
+  yyjson_mut_doc_free(doc);
+
+  if (json) {
+    PLOG_VERBOSE << "serialized: " << json;
+  } else {
+    PLOG_WARNING << "json: Error generating json content";
+  }
+
+  return json;
+}
