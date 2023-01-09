@@ -84,10 +84,10 @@ add_dependencies(sshtrace_skel libbpf-build)
 
 set(sshbouncer_SRC
   sshbouncer.cpp
-  pts_parser.cpp
-  existing_connections.cpp
   sshtrace_wrapper.cpp
   event_serializer.cpp
+  proc_parsers/pts_parser.cpp
+  proc_parsers/existing_connections.cpp
 )
 add_library(sshbouncer SHARED
   ${sshbouncer_SRC}

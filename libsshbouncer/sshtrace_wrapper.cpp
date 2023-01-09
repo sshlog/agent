@@ -1,8 +1,8 @@
 #include "sshtrace_wrapper.h"
 #include "bpf/sshtrace_events.h"
 #include "event_serializer.h"
-#include "existing_connections.h"
-#include "pts_parser.h"
+#include "proc_parsers/existing_connections.h"
+#include "proc_parsers/pts_parser.h"
 #include <argp.h>
 #include <arpa/inet.h>
 #include <iostream>

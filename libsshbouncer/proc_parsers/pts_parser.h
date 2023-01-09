@@ -1,7 +1,7 @@
 #ifndef SSHBOUNCER_PTS_PARSER_H
 #define SSHBOUNCER_PTS_PARSER_H
 
-#include "bpf/sshtrace_types.h"
+#include "../bpf/sshtrace_types.h"
 #include <stdint.h>
 #include <vector>
 
