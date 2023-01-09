@@ -29,7 +29,7 @@ set (CMAKE_CXX_STANDARD 17)
 include(ExternalProject)
 ExternalProject_Add(libbpf
   PREFIX libbpf
-  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../libbpf/src
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libbpf/src
   CONFIGURE_COMMAND ""
   BUILD_COMMAND make
     BUILD_STATIC_ONLY=1
