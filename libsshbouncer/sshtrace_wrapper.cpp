@@ -202,7 +202,7 @@ static void handle_event(void* ctx, int cpu, void* data, uint32_t data_sz) {
 
     if (pts_parser.pts_fd_1 == PTS_UNKNOWN) {
       // Warn but this could still be a file transfer or SSH command w/o tty
-      PLOG_WARNING << "Cannot parse FD/TTY data for ptm PID " << e->ptm_pid;
+      PLOG_DEBUG << "Cannot parse FD/TTY data for ptm PID " << e->ptm_pid << " could be ssh command w/o tty";
     }
 
     // int connections_fd = bpf_map__fd(skel->maps.connections);
