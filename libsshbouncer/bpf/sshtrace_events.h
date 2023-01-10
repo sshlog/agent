@@ -12,12 +12,14 @@
 // Triggered from userspace code after conn details have been parsed
 #define SSHTRACE_EVENT_ESTABLISHED_CONNECTION 102
 #define SSHTRACE_EVENT_CLOSE_CONNECTION 103
-#define SSHTRACE_EVENT_COMMAND_START 201
 
+#define SSHTRACE_EVENT_COMMAND_START 201
 #define SSHTRACE_EVENT_COMMAND_END 202
+
 // Every time the terminal updates, this pushes the data
 #define SSHTRACE_EVENT_TERMINAL_UPDATE 301
 
+#define SSHTRACE_EVENT_FILE_UPLOAD 401
 // Signals us to grab additional conn data from userspace
 // Only used internally
 #define SSHTRACE_EVENT_BASH_CLONED 1
@@ -63,5 +65,15 @@ struct command_event {
 
   struct command cmd;
 };
+
+struct file_upload_event {
+  int32_t event_type;
+
+  uint32_t ptm_pid;
+
+  char target_path[2048];
+  uint32_t file_mode;
+};
+
 
 #endif

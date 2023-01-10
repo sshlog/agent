@@ -185,6 +185,7 @@ static void handle_event(void* ctx, int cpu, void* data, uint32_t data_sz) {
   case SSHTRACE_EVENT_CLOSE_CONNECTION:
   case SSHTRACE_EVENT_COMMAND_START:
   case SSHTRACE_EVENT_COMMAND_END:
+  case SSHTRACE_EVENT_FILE_UPLOAD:
   case SSHTRACE_EVENT_TERMINAL_UPDATE: {
     wrapper->queue_event(data);
     break;

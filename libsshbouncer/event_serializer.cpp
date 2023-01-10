@@ -18,6 +18,8 @@ static const char* get_event_str(int event_type) {
     return "command_start";
   case SSHTRACE_EVENT_COMMAND_END:
     return "command_finish";
+  case SSHTRACE_EVENT_FILE_UPLOAD:
+    return "file_upload";
   case SSHTRACE_EVENT_TERMINAL_UPDATE:
     return "terminal_update";
   default:
@@ -98,6 +100,17 @@ char* serialize_event(void* event_struct) {
     yyjson_mut_obj_add_int(doc, root, "ptm_pid", e->ptm_pid);
     yyjson_mut_obj_add_str(doc, root, "terminal_data", e->terminal_data);
     yyjson_mut_obj_add_int(doc, root, "data_len", e->data_len);
+  } else if (e_generic->event_type == SSHTRACE_EVENT_FILE_UPLOAD) {
+
+    const struct file_upload_event* e = (const struct file_upload_event*) event_struct;
+    char mode_s[8];
+    //strmode(e->file_mode, mode_s);
+    snprintf(mode_s, sizeof(mode_s), "%3o", e->file_mode & 0777);
+    yyjson_mut_obj_add_int(doc, root, "ptm_pid", e->ptm_pid);
+    yyjson_mut_obj_add_str(doc, root, "target_path", e->target_path);
+    //yyjson_mut_obj_add_int(doc, root, "file_mode", e->file_mode);
+    yyjson_mut_obj_add_str(doc, root, "file_mode", mode_s);
+
   } else {
     PLOG_WARNING << "Unknown event type sent for serialization: " << e_generic->event_type;
   }

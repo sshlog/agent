@@ -143,6 +143,20 @@ static u64 get_parent_pid(void)
 	return ((u64)p_tgid << 32) | p_pid;
 }
 
+static u64 get_grandparent_pid(void)
+{
+	struct task_struct *curr = (struct task_struct *)bpf_get_current_task();
+	struct task_struct *parent = (struct task_struct *)BPF_CORE_READ(curr, parent);
+	struct task_struct *gparent = (struct task_struct *)BPF_CORE_READ(parent, parent);
+
+	if (parent == NULL)
+		return 0;
+
+	u32 p_tgid = BPF_CORE_READ(gparent, tgid);
+	u32 p_pid = BPF_CORE_READ(gparent, pid);
+
+	return ((u64)p_tgid << 32) | p_pid;
+}
 
 static struct connection *find_ancestor_connection(void)
 {
@@ -458,6 +472,66 @@ int sys_exit_clone(struct trace_event_raw_sys_exit* ctx)
 	return 0;
 }
 
+#define O_WRONLY	     01
+SEC("tracepoint/syscalls/sys_enter_openat")
+int sys_enter_openat(struct trace_event_raw_sys_enter* ctx) 
+{
+
+	// field:int dfd;  offset:16;      size:8; signed:0;
+	// field:const char * filename;    offset:24;      size:8; signed:0;
+	// field:int flags;        offset:32;      size:8; signed:0;
+	// field:umode_t mode;     offset:40;      size:8; signed:0;
+
+	// Just needs to be bigger than scp\0
+	char pname[5];
+
+ 	bpf_get_current_comm(&pname, sizeof(pname));
+
+	// Check that process name is "scp"
+	if (pname[0] != 's' || pname[1] != 'c' || pname[2] != 'p' || pname[3] != '\0')
+	{
+		return 0;
+	}
+	
+	// This needs to be a direct descendent of PTS (i.e., no bash or shell in between)
+	// Otherwise, this is not an scp upload
+	u32 gparent_tgid = get_grandparent_pid() >> 32;
+	struct connection* conn = bpf_map_lookup_elem(&connections, &gparent_tgid);
+	if (conn != NULL)
+	{
+		
+
+		u32 flags = (size_t) BPF_CORE_READ(ctx, args[2]);
+		
+		if (flags & O_WRONLY)
+		{
+			u32 mode = (size_t) BPF_CORE_READ(ctx, args[3]);
+
+			static struct file_upload_event e;
+			e.event_type = SSHTRACE_EVENT_FILE_UPLOAD;
+			e.ptm_pid = conn->ptm_tgid;
+			e.file_mode = mode;
+
+			const char* filename_ptr = (const char*) BPF_CORE_READ(ctx, args[1]);
+			//static char filename[255];
+			bpf_core_read_user_str(e.target_path, sizeof(e.target_path), ctx->args[1]);
+
+			u32 current_tgid = bpf_get_current_pid_tgid() >> 32;
+			log_printk("scp open event: pid: %d ptm_pid %d - %s",  current_tgid, e.ptm_pid, e.target_path);
+
+
+			push_event(ctx, &e, sizeof(e));
+
+			// u32 dfd = (size_t) BPF_CORE_READ(ctx, args[0]);
+			// log_printk("open:  tgid: %d - %s",  current_tgid, filename);)
+			// log_printk("open:  dfd: %d flags: %d mode: %d",  dfd, flags, mode;
+		}
+
+
+	}
+
+	return 0;
+}
 
 
 
