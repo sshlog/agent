@@ -15,12 +15,6 @@
 
 namespace sshbouncer {
 
-static std::string getUser(uid_t uid) {
-  struct passwd* pws;
-  pws = getpwuid(uid);
-  return pws->pw_name;
-}
-
 PtsParser::PtsParser(int pts_pid) {
   this->pts_fd_1 = PTS_UNKNOWN;
   this->pts_fd_2 = PTS_UNKNOWN;
@@ -30,8 +24,12 @@ PtsParser::PtsParser(int pts_pid) {
 
   find_pts_fds(pts_pid);
   find_user_id(pts_pid);
-  if (this->pts_fd_1 != PTS_UNKNOWN)
+  if (this->pts_fd_1 != PTS_UNKNOWN) {
     find_tty_id(pts_pid, this->pts_fd_1);
+  } else {
+    // This is not a TTY, so it could either be a one-off command
+    // or it could be a SCP.
+  }
 }
 
 PtsParser::~PtsParser() {}
@@ -132,6 +130,12 @@ void PtsParser::find_user_id(int32_t pid) {
   pfs::procfs pfs;
   pfs::task process = pfs.get_task(pid);
   this->user_id = process.get_status().uid.real;
+}
+
+static std::string getUser(uid_t uid) {
+  struct passwd* pws;
+  pws = getpwuid(uid);
+  return pws->pw_name;
 }
 
 void PtsParser::populate_connection(struct connection* conn) {
