@@ -275,11 +275,12 @@ static void handle_perf_dropped(void* ctx, int cpu, __u64 cnt) {
 }
 
 static struct connection create_connection(struct ssh_session existing_session) {
-  struct connection c;
+  struct connection c = {0};
   c.pts_tgid = existing_session.pts_pid;
   c.ptm_tgid = existing_session.ptm_pid;
   c.shell_tgid = existing_session.bash_pid;
   c.start_time = existing_session.start_time;
+  c.end_time = 0;
 
   // Convert IP address back out to integer
   struct sockaddr_in sa;
