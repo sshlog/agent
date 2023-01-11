@@ -13,7 +13,7 @@
 #define FILEPATH_MAX 4096
 #define USERNAME_MAX_LENGTH 32
 
-#define RATE_LIMIT_MAX_BYTES_PER_SECOND 512000
+#define RATE_LIMIT_MAX_BYTES_PER_SECOND 1024000
 
 struct tcpinfo {
   uint32_t server_ip;

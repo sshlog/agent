@@ -795,9 +795,12 @@ int sys_enter_write(struct trace_event_raw_sys_enter* ctx)
 // (e.g., local ssh running find /) from blowing out the perf buffer.  
 static int is_rate_limited(void* ctx, struct connection* conn, int32_t new_bytes, u32 parent_tgid)
 {
+	// Break the rate limit down into 250ms increments so that it doesn't feel as jittery
+	// when rate limits hit
+	const int TIME_INTERVALS_PER_SECOND = 4;
 
 	const int64_t NANOSECONDS_IN_A_SECOND = 1000000000;
-	int64_t cur_epoch_sec = bpf_ktime_get_ns() / NANOSECONDS_IN_A_SECOND;
+	int64_t cur_epoch_sec = bpf_ktime_get_ns() / (NANOSECONDS_IN_A_SECOND/TIME_INTERVALS_PER_SECOND);
 	if (cur_epoch_sec != conn->rate_limit_epoch_second )
 	{
 		// We've entered a new second.  Reset all the counters
@@ -808,7 +811,7 @@ static int is_rate_limited(void* ctx, struct connection* conn, int32_t new_bytes
 
 	conn->rate_limit_total_bytes_this_second += new_bytes;
 	//log_printk("rate limit sec %d bytes %d", conn->rate_limit_epoch_second, conn->rate_limit_total_bytes_this_second);
-	if (conn->rate_limit_total_bytes_this_second > RATE_LIMIT_MAX_BYTES_PER_SECOND)
+	if (conn->rate_limit_total_bytes_this_second > (RATE_LIMIT_MAX_BYTES_PER_SECOND/TIME_INTERVALS_PER_SECOND))
 	{
 		// Rate limit.  If limit has already been hit this second, just exit
 		// if not, send an event message back with the rate limit message
