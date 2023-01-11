@@ -4,6 +4,7 @@
 #include <arpa/inet.h>
 #include <plog/Log.h>
 #include <string>
+#include <time.h>
 #include <yyjson.h>
 
 static const char* get_event_str(int event_type) {
@@ -27,6 +28,47 @@ static const char* get_event_str(int event_type) {
   }
 }
 
+static int64_t boottime_diff = -1;
+static int64_t highest_boottime = -1;
+static int64_t compute_boottime_diff_from_realtime(int64_t boottime) {
+  // ebpf reports time since bootup (including suspend) see: bpf_ktime_get_boot_ns
+  // We need to convert this to wall clock time by comparing the offset
+
+  const int64_t NANOS_IN_A_SEC = 1000000000;
+  const int64_t NANOS_IN_A_MILLIS = 1000000;
+  const int64_t MILLIS_IN_A_SEC = 1000;
+  const int SECONDS_BETWEEN_RECOMPUTE = 10;
+  // Subtract the two timespecs and convert to milliseconds
+  int64_t sec_diff = (boottime - highest_boottime) / NANOS_IN_A_SEC;
+  if (boottime_diff == -1 || sec_diff >= SECONDS_BETWEEN_RECOMPUTE) {
+    // Recompute the difference.  Let's do this every 10 seconds or so because
+    // the MONOTONIC time does not include suspend time.  So if the machine goes to sleep/wakes up all times will be off
+    // until recomputed
+    struct timespec ts_bt, ts_rt;
+    clock_gettime(CLOCK_MONOTONIC, &ts_bt);
+    clock_gettime(CLOCK_REALTIME, &ts_rt);
+
+    boottime_diff =
+        (ts_rt.tv_sec - ts_bt.tv_sec) * MILLIS_IN_A_SEC + (ts_rt.tv_nsec - ts_bt.tv_nsec) / NANOS_IN_A_MILLIS;
+
+    PLOG_DEBUG << "Recomputing realtime ms: " << sec_diff << " - " << highest_boottime << " - "
+               << ts_rt.tv_sec * MILLIS_IN_A_SEC + (ts_rt.tv_nsec / NANOS_IN_A_MILLIS) << "  Recomputing Boottime sec "
+               << ts_bt.tv_sec << " nsec: " << ts_bt.tv_nsec << "  Realtime sec: " << ts_rt.tv_sec
+               << " nsec: " << ts_rt.tv_nsec << " -- diff: " << boottime_diff;
+
+    if ((int64_t) boottime > highest_boottime)
+      highest_boottime = boottime;
+  }
+
+  if (boottime == 0)
+    return 0;
+
+  // PLOG_VERBOSE << "boottime " << (boottime / NANOS_IN_A_MILLIS) << " + diff " << boottime_diff << " = "
+  //              << (boottime / NANOS_IN_A_MILLIS) + boottime_diff;
+
+  // Boottime (from bpf) will be in nanoseconds.  Convert to ms and add the diff to get to realtime
+  return (boottime / NANOS_IN_A_MILLIS) + boottime_diff;
+}
 static void serialize_connection(const struct connection* conn, yyjson_mut_doc* doc, yyjson_mut_val* root) {
 
   yyjson_mut_obj_add_int(doc, root, "user_id", conn->user_id);
@@ -36,8 +78,8 @@ static void serialize_connection(const struct connection* conn, yyjson_mut_doc* 
   yyjson_mut_obj_add_int(doc, root, "shell_pid", conn->shell_tgid);
   yyjson_mut_obj_add_int(doc, root, "tty_id", conn->tty_id);
 
-  yyjson_mut_obj_add_int(doc, root, "start_time", conn->start_time);
-  yyjson_mut_obj_add_int(doc, root, "end_time", conn->end_time);
+  yyjson_mut_obj_add_int(doc, root, "start_time", compute_boottime_diff_from_realtime(conn->start_time));
+  yyjson_mut_obj_add_int(doc, root, "end_time", compute_boottime_diff_from_realtime(conn->end_time));
 
   struct in_addr ip_addr;
 
@@ -59,8 +101,8 @@ static void serialize_connection(const struct connection* conn, yyjson_mut_doc* 
 static void serialize_command(const struct command* cmd, yyjson_mut_doc* doc, yyjson_mut_val* root) {
 
   yyjson_mut_obj_add_str(doc, root, "filename", cmd->filename);
-  yyjson_mut_obj_add_int(doc, root, "start_time", cmd->start_time);
-  yyjson_mut_obj_add_int(doc, root, "end_time", cmd->end_time);
+  yyjson_mut_obj_add_int(doc, root, "start_time", compute_boottime_diff_from_realtime(cmd->start_time));
+  yyjson_mut_obj_add_int(doc, root, "end_time", compute_boottime_diff_from_realtime(cmd->end_time));
 
   yyjson_mut_obj_add_int(doc, root, "stdout_size", cmd->stdout_offset);
   yyjson_mut_obj_add_str(doc, root, "stdout", cmd->stdout);

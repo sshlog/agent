@@ -3,6 +3,7 @@
 #include <iostream>
 #include <plog/Log.h>
 #include <sys/stat.h>
+#include <time.h>
 #include <unordered_map>
 
 namespace sshbouncer {
@@ -51,7 +52,16 @@ ExistingConnections::ExistingConnections() {
       session.client_port = SSH_SESSION_UNKNOWN;
       session.server_ip = "";
       session.server_port = SSH_SESSION_UNKNOWN;
-      session.start_time = process.get_stat().starttime;
+
+      // Convert process start time to CLOCK_MONOTONIC time
+      // to match what comes out of BPF
+      // Take current boottime (nanoseconds) and subtract proc uptime (nanoseconds)
+      const int NANOS_IN_A_SEC = 1000000000;
+      struct timespec boottime;
+      clock_gettime(CLOCK_MONOTONIC, &boottime);
+      session.start_time =
+          (boottime.tv_sec * NANOS_IN_A_SEC) + boottime.tv_nsec - (process.get_stat().utime * NANOS_IN_A_SEC);
+
       session.user_id = process.get_status().uid.real;
 
       // Iterate the processes and stop at the first process that lists
