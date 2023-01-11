@@ -791,48 +791,6 @@ int sys_enter_write(struct trace_event_raw_sys_enter* ctx)
 	return 0;
 }
 
-SEC("tracepoint/syscalls/sys_enter_read")
-int sys_enter_read(struct trace_event_raw_sys_enter* ctx) 
-{
-
-	// field:unsigned int fd;  offset:16;      size:8; signed:0;
-	// field:char * buf;       offset:24;      size:8; signed:0;
-	// field:size_t count;     offset:32;      size:8; signed:0;
-
-	u32 fd = (uint32_t) BPF_CORE_READ(ctx, args[0]);
-
-	// Quick/efficient check to bounce out early without having to lookup connection ID
-	// We will never be reading non SSHD process nor stdin/stdout/stderr
-    if (fd == STDERR_FILENO || fd == STDOUT_FILENO || fd == STDIN_FILENO || !proc_is_sshd())
-		return 1;
-
-	// We want to catch the pts process which pipes all reads out to the /dev/ptsx fd
-	u32 parent_tgid = get_parent_pid() >> 32;
-
-	
-	struct connection* conn = bpf_map_lookup_elem(&connections, &parent_tgid);
-
-	if (conn != NULL)
-	{
-		if (conn->pts_fd == fd || conn->pts_fd2 == fd || conn->pts_fd3 == fd)
-		{
-			//const char* buf = (const char*) BPF_CORE_READ(ctx, args[1]);
-			size_t size = (size_t) BPF_CORE_READ(ctx, args[2]);
-			
-			struct read_buffer_map readmap = {0};
-			readmap.fd = fd;
-			readmap.data_ptr = (void*) ctx->args[1];
-
-			bpf_map_update_elem(&connections_read_mapping, &parent_tgid, &readmap, BPF_ANY);
-
-
-		}
-	}
-
-
-	return 0;
-}
-
 // Rate limit prevents a huge data spike of terminal data from one or more sessions 
 // (e.g., local ssh running find /) from blowing out the perf buffer.  
 static int is_rate_limited(void* ctx, struct connection* conn, int32_t new_bytes, u32 parent_tgid)
@@ -905,6 +863,53 @@ static int is_rate_limited(void* ctx, struct connection* conn, int32_t new_bytes
 	}
 	return 0;
 }
+
+SEC("tracepoint/syscalls/sys_enter_read")
+int sys_enter_read(struct trace_event_raw_sys_enter* ctx) 
+{
+
+	// field:unsigned int fd;  offset:16;      size:8; signed:0;
+	// field:char * buf;       offset:24;      size:8; signed:0;
+	// field:size_t count;     offset:32;      size:8; signed:0;
+
+	u32 fd = (uint32_t) BPF_CORE_READ(ctx, args[0]);
+
+	// Quick/efficient check to bounce out early without having to lookup connection ID
+	// We will never be reading non SSHD process nor stdin/stdout/stderr
+    if (fd == STDERR_FILENO || fd == STDOUT_FILENO || fd == STDIN_FILENO || !proc_is_sshd())
+		return 1;
+
+	// We want to catch the pts process which pipes all reads out to the /dev/ptsx fd
+	u32 parent_tgid = get_parent_pid() >> 32;
+
+	
+	struct connection* conn = bpf_map_lookup_elem(&connections, &parent_tgid);
+
+	if (conn != NULL)
+	{
+		if (conn->pts_fd == fd || conn->pts_fd2 == fd || conn->pts_fd3 == fd)
+		{
+			// Check if this should be rate limited
+			if (is_rate_limited(ctx, conn, 0, parent_tgid)) {
+				return 0;
+			}
+			//const char* buf = (const char*) BPF_CORE_READ(ctx, args[1]);
+			size_t size = (size_t) BPF_CORE_READ(ctx, args[2]);
+
+			struct read_buffer_map readmap = {0};
+			readmap.fd = fd;
+			readmap.data_ptr = (void*) ctx->args[1];
+
+			bpf_map_update_elem(&connections_read_mapping, &parent_tgid, &readmap, BPF_ANY);
+
+
+		}
+	}
+
+
+	return 0;
+}
+
 
 SEC("tracepoint/syscalls/sys_exit_read")
 int sys_exit_read(struct trace_event_raw_sys_exit* ctx) 
