@@ -118,7 +118,7 @@ void PtsParser::find_tty_id(int32_t pid, int32_t fd) {
 
     linestream >> val1 >> val2;
 
-    if (strncmp(val1.c_str(), tty_index_key, strlen(tty_index_key)) == 0 && val2.length() == 1) {
+    if (strncmp(val1.c_str(), tty_index_key, strlen(tty_index_key)) == 0 && val2.length() >= 1) {
       this->tty_id = stoi(val2);
       PLOG_DEBUG << "Found TTY ID: " << this->tty_id;
     }
