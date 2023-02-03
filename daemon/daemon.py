@@ -2,11 +2,12 @@ import argparse
 import logging
 from comms.mq_server import MQLocalServer
 import sys
+import os
 from sshbouncer import SSHBouncer
 from trackers.tracker import Tracker
 from events.event_bus import eventbus_sshtrace_push
 
-if __name__ == "__main__":
+def run_main():
 
     parser = argparse.ArgumentParser(description="SSHBouncer Daemon")
 
@@ -59,8 +60,13 @@ if __name__ == "__main__":
                 event_data = sshb.poll(timeout=100)
                 if event_data is not None:
                     logger.debug(event_data)
-                    eventbus_sshtrace_push(event_data)
+                    eventbus_sshtrace_push(event_data, session_tracker)
         except KeyboardInterrupt:
             pass
 
     server.shutdown()
+
+
+if __name__ == "__main__":
+
+    run_main()
