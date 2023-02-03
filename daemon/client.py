@@ -3,10 +3,14 @@ import logging
 import os
 import sys
 from comms.mq_client import MQClient
-from comms.dtos import SessionListRequestDto, SessionListResponseDto
+from comms.dtos import SessionListRequestDto, SessionListResponseDto, EventWatchRequestDto, ShellSendKeysRequestDto
+from cli.formatter import print_sessions, print_event_structured
+from cli.terminal_emulator import TerminalEmulator, TERM_QUIT_KEY
+from comms.event_types import *
 import json
-from prettytable import PrettyTable
-from prettytable import PLAIN_COLUMNS, SINGLE_BORDER
+import os
+import time
+
 
 if __name__ == "__main__":
 
@@ -37,11 +41,10 @@ if __name__ == "__main__":
 
     # create the parser for the "session" command
     parser_sessions = subparsers.add_parser('sessions', help='List all active sessions')
-    sessions_subparsers = parser_sessions.add_subparsers(title='session subcommands', dest='session_subcommand')
 
     # create the parser for the "ls" subcommand
     parser_attach = subparsers.add_parser('attach', help='Attach to a session')
-    parser_attach.add_argument('session_id',  help='ID of the session to attach to')
+    parser_attach.add_argument('tty_id',  type=int, help='TTY of the session to attach to')
     parser_attach.add_argument('--readonly', '-r', action='store_true', help='Watch session only, no input is allowed')
 
     # create the parser for the "kill" subcommand
@@ -76,33 +79,123 @@ if __name__ == "__main__":
     # add ch to logger
     logger.addHandler(ch)
 
-    if args.command == 'sessions':
-        client = MQClient()
-        client.make_request(SessionListRequestDto())
+    client = MQClient()
 
-        response = client.listen_for_response()
+    if args.command == 'sessions':
+        correlation_id = client.make_request(SessionListRequestDto())
+
+        response = client.listen_for_response(correlation_id)
         if response is None:
             logger.error("Unable to communicate with sshbouncerd")
             sys.exit(1)
 
         list_data = response.dto_payload  # type: SessionListResponseDto
-        print("SESSIONS")
-        print(list_data)
-        if args.json:
-            logger.info(list_data.to_json())
-        else:
-            out_table = PrettyTable()
-            out_table.set_style(SINGLE_BORDER)
-            fields = ['User', 'Last Activity', 'Session Start', 'Client IP', 'TTY']
+        print_sessions(list_data, output_json=args.json)
 
-            out_table.field_names = fields
-            for session in list_data.sessions:
-                row = [session.username, session.last_activity_time, session.start_time,
-                               f'{session.client_ip}:{session.client_port}', session.tty_id]
-                out_table.add_row(row)
+    elif args.command == 'watch':
 
-            logger.info("\n" + out_table.get_string(sortby='User'))
+        watch_events = [
+            SSHTRACE_EVENT_NEW_CONNECTION,
+            SSHTRACE_EVENT_ESTABLISHED_CONNECTION,
+            SSHTRACE_EVENT_CLOSE_CONNECTION,
+            SSHTRACE_EVENT_COMMAND_START,
+            SSHTRACE_EVENT_COMMAND_END,
+            SSHTRACE_EVENT_FILE_UPLOAD
+        ]
+        request_dto = EventWatchRequestDto(event_types=watch_events)
+        request_correlation_id = client.make_request(request_dto)
+
+        try:
+
+            while True:
+                # Continually make the watch request to keep it refreshed.
+                # Once timed out, it will stop sending responses
+                client.make_request(request_dto, correlation_id=request_correlation_id)
+
+                response_data = client.listen_for_response(request_correlation_id, timeout_sec=0.25)
+                if response_data is not None:
+                    event_data = response_data.dto_payload.payload_json
+                    print_event_structured(event_data, args.json)
 
 
+        except KeyboardInterrupt:
+            pass
+
+    elif args.command == 'attach':
+
+        # First get the sessions list, verify that our session is listed.
+        correlation_id = client.make_request(SessionListRequestDto())
+
+        response = client.listen_for_response(correlation_id)
+        if response is None:
+            logger.error("Unable to communicate with sshbouncerd")
+            sys.exit(1)
+        list_data = response.dto_payload  # type: SessionListResponseDto
+        ptm_id = -1
+        for sess in list_data.sessions:
+            if sess.tty_id == args.tty_id:
+                ptm_id = sess.ptm_pid
+
+        if ptm_id <= 0:
+            logger.error(f"Cannot find session with TTY ID {args.tty_id}")
+            sys.exit(1)
+
+        request_dto = EventWatchRequestDto(
+            event_types=[SSHTRACE_EVENT_CLOSE_CONNECTION, SSHTRACE_EVENT_TERMINAL_UPDATE],
+            ptm_pid=ptm_id
+        )
+        request_correlation_id = client.make_request(request_dto)
+
+        term_active = True
+
+        def keyboard_intercept(keys):
+            global term_active
+            if keys == TERM_QUIT_KEY:
+                term_active = False
+            elif not args.readonly:
+                # Push an event to the daemon so that it can WRITE to this active terminal
+                shell_send_dto = ShellSendKeysRequestDto(ptm_pid=ptm_id,
+                                                         keys=keys.decode('utf-8'))
+                client.make_request(shell_send_dto)
+            #print(f"KEY: {str(keys)}")
 
 
+        os.system("tput reset")
+
+        term = TerminalEmulator(args.tty_id)
+        term.intercept_keyboard(keyboard_intercept)
+
+        # When we first connect, send a force_redraw message so that the initial
+        # bash state gets re-sent.  Otherwise, users will have to press "enter" to get an initial prompt
+        client.make_request(ShellSendKeysRequestDto(ptm_pid=ptm_id,
+                                                 force_redraw=True,
+                                                 keys=''))
+
+        read_only_text = ''
+        if args.readonly:
+            read_only_text = " in READ-ONLY mode"
+        logger.info(f"Attached to TTY {args.tty_id}{read_only_text}.  Press CTRL+Q to exit\n\r")
+
+        last_refresh_time = time.time()
+        REFRESH_INTERVAL_SEC = 0.25
+        while term_active:
+            if time.time() - last_refresh_time > REFRESH_INTERVAL_SEC:
+                # Continually make the watch request to keep it refreshed.
+                # If this isn't sent regularly, it will time out and server will stop sending responses
+                client.make_request(request_dto, correlation_id=request_correlation_id)
+                last_refresh_time = time.time()
+
+            response_data = client.listen_for_response(request_correlation_id, timeout_sec=0.25)
+
+            if response_data is not None:
+                event_data = response_data.dto_payload.payload_json
+
+                # If the connection closes for this ptm, exit
+                if event_data['event_type'] == SSHTRACE_EVENT_CLOSE_CONNECTION:
+                    break
+                elif event_data['event_type'] == SSHTRACE_EVENT_TERMINAL_UPDATE:
+                    term.update(event_data['terminal_data'], event_data['data_len'])
+
+        logger.info(f"\n\rDisconnected from TTY {args.tty_id}\r")
+
+    client.disconnect()

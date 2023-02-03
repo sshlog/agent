@@ -8,14 +8,21 @@ from uuid import uuid4
 SESSION_LIST_REQUEST = 1
 SESSION_LIST_RESPONSE = 2
 
+EVENT_WATCH_REQUEST = 101
+EVENT_WATCH_RESPONSE = 102
+
+SHELL_SENDKEYS_REQUEST = 201
+
+
 class SerializableMessage:
     def __init__(self, dto_payload):
         self.payload_type = dto_payload.payload_type
 
     def __str__(self):
-        return self.correlation_id + " - " + self.dto_payload.__repr__()
+        return f"client_id: {self.client_id} correlation_id: {self.correlation_id} - {self.dto_payload.__repr__()}"
     def to_json(self):
         json_obj = json.dumps({
+            'client_id': self.client_id,
             'correlation_id': self.correlation_id,
             'payload_type': self.payload_type,
             'dto_payload': self.dto_payload.to_json()
@@ -24,8 +31,9 @@ class SerializableMessage:
 
 
 class RequestMessage(SerializableMessage):
-    def __init__(self, dto_payload, correlation_id=None):
+    def __init__(self, dto_payload, client_id, correlation_id=None):
         super(RequestMessage, self).__init__(dto_payload)
+        self.client_id = client_id
         if not correlation_id:
             self.correlation_id = uuid4().__str__()
         else:
@@ -33,8 +41,9 @@ class RequestMessage(SerializableMessage):
         self.dto_payload = dto_payload
 
 class ResponseMessage(SerializableMessage):
-    def __init__(self, dto_payload, correlation_id):
+    def __init__(self, dto_payload, client_id, correlation_id):
         super(ResponseMessage, self).__init__(dto_payload)
+        self.client_id = client_id
         self.correlation_id = correlation_id
         self.dto_payload = dto_payload
 
@@ -44,6 +53,32 @@ class ResponseMessage(SerializableMessage):
 @dataclass(frozen=True)
 class SessionListRequestDto:
     payload_type: int = SESSION_LIST_REQUEST
+
+
+@dataclass_json
+@dataclass(frozen=True)
+class EventWatchRequestDto:
+    event_types: List[str]
+    ptm_pid: int = -1
+    payload_type: int = EVENT_WATCH_REQUEST
+
+
+@dataclass_json
+@dataclass(frozen=True)
+class ShellSendKeysRequestDto:
+    ptm_pid: int
+    keys: str
+    force_redraw: bool = False
+    payload_type: int = SHELL_SENDKEYS_REQUEST
+
+
+@dataclass_json
+@dataclass(frozen=True)
+class EventWatchResponseDto:
+    event_type: str
+    payload_json: str
+    payload_type: int = EVENT_WATCH_RESPONSE
+
 
 @dataclass_json
 @dataclass(frozen=True)
@@ -55,6 +90,7 @@ class SessionDto:
     start_time: str
     end_time: str
     last_activity_time: int
+    last_command: str
     user_id: int
     username: str
     client_ip: str
@@ -73,9 +109,17 @@ class SessionListResponseDto:
 def deserialize_message(json_data):
     raw_dict = json.loads(json_data)
     if raw_dict['payload_type'] == SESSION_LIST_REQUEST:
-        return RequestMessage(SessionListRequestDto.from_json(raw_dict['dto_payload']), correlation_id=raw_dict['correlation_id'])
+        return RequestMessage(SessionListRequestDto.from_json(raw_dict['dto_payload']), client_id=raw_dict['client_id'], correlation_id=raw_dict['correlation_id'])
     elif raw_dict['payload_type'] == SESSION_LIST_RESPONSE:
-        return ResponseMessage(SessionListResponseDto.from_json(raw_dict['dto_payload']), correlation_id=raw_dict['correlation_id'])
+        return ResponseMessage(SessionListResponseDto.from_json(raw_dict['dto_payload']), client_id=raw_dict['client_id'], correlation_id=raw_dict['correlation_id'])
+    elif raw_dict['payload_type'] == EVENT_WATCH_REQUEST:
+        return ResponseMessage(EventWatchRequestDto.from_json(raw_dict['dto_payload']), client_id=raw_dict['client_id'], correlation_id=raw_dict['correlation_id'])
+    elif raw_dict['payload_type'] == EVENT_WATCH_RESPONSE:
+        return ResponseMessage(EventWatchResponseDto.from_json(raw_dict['dto_payload']), client_id=raw_dict['client_id'], correlation_id=raw_dict['correlation_id'])
+    elif raw_dict['payload_type'] == SHELL_SENDKEYS_REQUEST:
+        return ResponseMessage(ShellSendKeysRequestDto.from_json(raw_dict['dto_payload']), client_id=raw_dict['client_id'], correlation_id=raw_dict['correlation_id'])
+    else:
+        raise NotImplementedError(f"Could not deserialize message type for JSON {json_data}")
 
 
 

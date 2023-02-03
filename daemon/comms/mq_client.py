@@ -1,36 +1,51 @@
 import zmq
 from .dtos import RequestMessage, deserialize_message
 import time
+import logging
+from uuid import uuid4
+from .mq_base import NAMED_PIPE_REQ_PATH, NAMED_PIPE_RESP_PATH
+
 
 class MQClient:
     def __init__(self):
-        self.named_pipe_path = '/tmp/my_pipe'
+        # Generate a pseudo-random "client id" for each MQClient
+        self.client_id = uuid4().__str__()
+        self.logger = logging.getLogger('sshbouncer_client')
+
         self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.PAIR)
-        self.socket.connect(f"ipc://{self.named_pipe_path}")
-        self.correlation_id = None
+        self.req_socket = self.context.socket(zmq.PUSH)
+        self.req_socket.connect(f"ipc://{NAMED_PIPE_REQ_PATH}")
 
-        # Set the timeout for receiving messages to 1000 milliseconds
-        self.socket.setsockopt(zmq.RCVTIMEO, 100)
+        self.resp_socket = self.context.socket(zmq.SUB)
+        self.resp_socket.connect(f"ipc://{NAMED_PIPE_RESP_PATH}")
 
-    def make_request(self, dto_payload):
-        msg = RequestMessage(dto_payload)
-        self.correlation_id = msg.correlation_id
-        raw_data = msg.to_json().encode()
-        print(raw_data)
-        resp = self.socket.send(raw_data)
-        print(resp)
+        # Set the timeout for receiving messages to 100 milliseconds
+        self.resp_socket.setsockopt(zmq.RCVTIMEO, 100)
+        #self.resp_socket.setsockopt(zmq.SUBSCRIBE, self.client_id.encode('utf-8'))
+        self.resp_socket.subscribe(self.client_id)
+
+    def make_request(self, dto_payload, correlation_id=None):
+        msg = RequestMessage(dto_payload, self.client_id, correlation_id)
+        correlation_id = msg.correlation_id
+        raw_data = msg.to_json()
+        self.logger.debug(f"Request: {raw_data}")
+        resp = self.req_socket.send(raw_data.encode('utf-8'))
+        self.logger.debug(f"response {resp}")
+        return correlation_id
 
 
 
-    def listen_for_response(self):
+    def listen_for_response(self, correlation_id, timeout_sec=1.0):
         start_time = time.time()
 
-        MAX_WAIT_S = 1.00
-        while time.time() - start_time < MAX_WAIT_S:
+        while time.time() - start_time < timeout_sec:
             try:
-                message = deserialize_message(self.socket.recv())
-                if message.correlation_id == self.correlation_id:
+                raw_msg = self.resp_socket.recv().decode('utf-8')
+                # Topic (aka client ID) will be the first string separated by space.  Split just the first item and
+                # send the rest for deserializing
+                topic, payload = raw_msg.split(" ", 1)
+                message = deserialize_message(payload)
+                if message.correlation_id == correlation_id:
                     return message
 
                 # Message received, but it's not for this client (wrong correlation ID)
@@ -40,3 +55,8 @@ class MQClient:
                 pass
 
         return None
+
+    def disconnect(self):
+        self.resp_socket.unsubscribe(self.client_id)
+        self.resp_socket.disconnect(f"ipc://{NAMED_PIPE_RESP_PATH}")
+        self.req_socket.disconnect(f"ipc://{NAMED_PIPE_REQ_PATH}")
