@@ -12,6 +12,7 @@ class Tracker:
         eventbus_sshtrace_subscribe(self.connection_established, SSHTRACE_EVENT_ESTABLISHED_CONNECTION)
         eventbus_sshtrace_subscribe(self.connection_closed, SSHTRACE_EVENT_CLOSE_CONNECTION)
 
+        eventbus_sshtrace_subscribe(self.command_activity, SSHTRACE_EVENT_COMMAND_START)
         eventbus_sshtrace_subscribe(self.connection_activity, SSHTRACE_EVENT_TERMINAL_UPDATE)
 
     def connection_open(self, event_data):
@@ -22,6 +23,7 @@ class Tracker:
         pid_key = event_data['ptm_pid']
         self.connections[pid_key] = event_data
         self.connections[pid_key]['last_activity_time'] = round(time.time() * 1000.0)
+        self.connections[pid_key]['last_command'] = ''
 
     def connection_closed(self, event_data):
         pid_key = event_data['ptm_pid']
@@ -32,6 +34,13 @@ class Tracker:
         pid_key = event_data['ptm_pid']
         if pid_key in self.connections:
             self.connections[pid_key]['last_activity_time'] = round(time.time() * 1000.0)
+
+    def command_activity(self, event_data):
+        pid_key = event_data['ptm_pid']
+        if pid_key in self.connections:
+            self.connections[pid_key]['last_command'] = event_data['args']
+
+
 
     def get_sessions(self):
         return self.connections.values()
