@@ -17,6 +17,16 @@ def eventbus_sshtrace_subscribe(callback, event_ids=None):
         sshtrace_event_signals[event_id].connect(callback)
 
 
+def eventbus_sshtrace_unsubscribe(callback, event_ids=None):
+    if event_ids is None:
+        event_ids = SSHTRACE_ALL_EVENTS
+    elif type(event_ids) != list:
+        event_ids = [event_ids]
+
+    for event_id in event_ids:
+        sshtrace_event_signals[event_id].disconnect(callback)
+
+
 def eventbus_sshtrace_push(event_data, session_tracker):
     event_type = event_data['event_type']
     # Attach connection data to events here
