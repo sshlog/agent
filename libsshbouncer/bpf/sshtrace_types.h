@@ -73,6 +73,8 @@ struct command {
   uint32_t parent_tgid;
   uint32_t current_tgid;
 
+  int32_t exit_code;
+
   uint32_t conn_tgid;
 };
 

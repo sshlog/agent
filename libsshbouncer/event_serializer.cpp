@@ -104,6 +104,8 @@ static void serialize_command(const struct command* cmd, yyjson_mut_doc* doc, yy
   yyjson_mut_obj_add_int(doc, root, "start_time", compute_boottime_diff_from_realtime(cmd->start_time));
   yyjson_mut_obj_add_int(doc, root, "end_time", compute_boottime_diff_from_realtime(cmd->end_time));
 
+  yyjson_mut_obj_add_int(doc, root, "exit_code", cmd->exit_code);
+
   yyjson_mut_obj_add_int(doc, root, "stdout_size", cmd->stdout_offset);
   yyjson_mut_obj_add_str(doc, root, "stdout", cmd->stdout);
   yyjson_mut_obj_add_str(doc, root, "args", cmd->args);

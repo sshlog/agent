@@ -679,7 +679,7 @@ int sys_enter_exit_group(struct trace_event_raw_sys_enter* ctx)
 {
 //	field:int error_code;	offset:16;	size:8;	signed:0;
 
-	u32 code = (u32) BPF_CORE_READ(ctx, args[0]);
+	u32 error_code = (u32) BPF_CORE_READ(ctx, args[0]);
 	u32 current_tgid = bpf_get_current_pid_tgid() >> 32;
 	struct command *cmd;
 	struct connection *conn;
@@ -710,6 +710,7 @@ int sys_enter_exit_group(struct trace_event_raw_sys_enter* ctx)
 	cmd = bpf_map_lookup_elem(&commands, &current_tgid);
 	if (cmd != NULL) {
 		cmd->end_time = bpf_ktime_get_ns();
+		cmd->exit_code = error_code;
 		log_printk("COMMAND EVENT!!!! conn tgid: %d, tgid: %d - %s", cmd->conn_tgid, current_tgid, cmd->filename);
 		log_printk("COMMAND EVENT!!!! %d %s", cmd->stdout_offset, cmd->stdout);
 
