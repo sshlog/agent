@@ -358,6 +358,7 @@ static void handle_new_connection(void* context, u32 sshd_tgid, u32 conn_tgid)
 	conn.user_id = -1;
 	conn.pts_tgid = -1;
 	conn.shell_tgid = -1;
+	conn.tty_id = -1;
 	conn.tcp_info = sockmap->recent_tcpinfo;
 
 	conn.start_time = bpf_ktime_get_ns();
