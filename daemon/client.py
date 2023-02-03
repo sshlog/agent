@@ -198,4 +198,5 @@ if __name__ == "__main__":
 
         logger.info(f"\n\rDisconnected from TTY {args.tty_id}\r")
 
+        term.shutdown()
     client.disconnect()
