@@ -21,7 +21,7 @@ class Tracker:
     def connection_established(self, event_data):
         pid_key = event_data['ptm_pid']
         self.connections[pid_key] = event_data
-        self.connections[pid_key]['last_activity_time'] = time.time()
+        self.connections[pid_key]['last_activity_time'] = round(time.time() * 1000.0)
 
     def connection_closed(self, event_data):
         pid_key = event_data['ptm_pid']
@@ -30,8 +30,8 @@ class Tracker:
 
     def connection_activity(self, event_data):
         pid_key = event_data['ptm_pid']
-        if pid_key in event_data:
-            self.connections[pid_key]['last_activity_time'] = time.time()
+        if pid_key in self.connections:
+            self.connections[pid_key]['last_activity_time'] = round(time.time() * 1000.0)
 
     def get_sessions(self):
         return self.connections.values()
