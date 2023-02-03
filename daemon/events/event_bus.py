@@ -17,6 +17,19 @@ def eventbus_sshtrace_subscribe(callback, event_ids=None):
         sshtrace_event_signals[event_id].connect(callback)
 
 
-def eventbus_sshtrace_push(event_data):
+def eventbus_sshtrace_push(event_data, session_tracker):
     event_type = event_data['event_type']
+    # Attach connection data to events here
+    if event_type == SSHTRACE_EVENT_COMMAND_START or event_type == SSHTRACE_EVENT_COMMAND_END or \
+            event_type == SSHTRACE_EVENT_FILE_UPLOAD:
+        # Lookup the active connection for this PID and attach some useful information to the event
+        active_conn = session_tracker.get_session(event_data['ptm_pid'])
+        if active_conn is not None:
+            event_data['username'] = active_conn['username']
+            event_data['tty_id'] = active_conn['tty_id']
+        else:
+            event_data['username'] = ''
+            event_data['tty_id'] = ''
+
+
     sshtrace_event_signals[event_type].send(event_data)
