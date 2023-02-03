@@ -7,7 +7,7 @@
 #endif
 
 // Read buffer bytes must be a power of 2
-#define CONNECTION_READ_BUFFER_BYTES 32768
+#define CONNECTION_READ_BUFFER_BYTES 16384
 
 #define SSHTRACE_FILENAME_MAX 255
 #define FILEPATH_MAX 4096

@@ -5,6 +5,7 @@
 #include <bpf/bpf_core_read.h>
 #include "sshtrace_events.h"
 #include "sshtrace_types.h"
+#include "sshtrace_heap.h"
 
 char LICENSE[] SEC("license") = "GPL";
 
@@ -371,13 +372,16 @@ static void handle_new_connection(void* context, u32 sshd_tgid, u32 conn_tgid)
 	
  	bpf_map_update_elem(&connections, &conn_tgid, &conn, BPF_ANY);
 
-
 	// The PTM has been created now, go ahead and send the event
-	static struct connection_event e;
-	e.event_type = SSHTRACE_EVENT_NEW_CONNECTION;
-	e.ptm_pid = conn.ptm_tgid;
-	e.conn = conn;
-	push_event(context, &e, sizeof(e));
+	int zero = 0;
+	struct connection_event* e = bpf_map_lookup_elem(&connectionevent_heap, &zero);
+	if (!e)
+			return;
+
+	e->event_type = SSHTRACE_EVENT_NEW_CONNECTION;
+	e->ptm_pid = conn.ptm_tgid;
+	e->conn = conn;
+	push_event(context, e, sizeof(struct connection_event));
 
 	log_printk("conn ptm_tgid %u\n", conn_tgid);
 }
@@ -507,20 +511,25 @@ int sys_enter_openat(struct trace_event_raw_sys_enter* ctx)
 		{
 			u32 mode = (size_t) BPF_CORE_READ(ctx, args[3]);
 
-			static struct file_upload_event e;
-			e.event_type = SSHTRACE_EVENT_FILE_UPLOAD;
-			e.ptm_pid = conn->ptm_tgid;
-			e.file_mode = mode;
+
+			int zero = 0;
+			struct file_upload_event* e = bpf_map_lookup_elem(&fileuploadevent_heap, &zero);
+			if (!e)
+					return 0;
+
+			e->event_type = SSHTRACE_EVENT_FILE_UPLOAD;
+			e->ptm_pid = conn->ptm_tgid;
+			e->file_mode = mode;
 
 			const char* filename_ptr = (const char*) BPF_CORE_READ(ctx, args[1]);
 			//static char filename[255];
-			bpf_core_read_user_str(e.target_path, sizeof(e.target_path), ctx->args[1]);
+			bpf_core_read_user_str(e->target_path, sizeof(e->target_path), ctx->args[1]);
 
 			u32 current_tgid = bpf_get_current_pid_tgid() >> 32;
-			log_printk("scp open event: pid: %d ptm_pid %d - %s",  current_tgid, e.ptm_pid, e.target_path);
+			log_printk("scp open event: pid: %d ptm_pid %d - %s",  current_tgid, e->ptm_pid, e->target_path);
 
 
-			push_event(ctx, &e, sizeof(e));
+			push_event(ctx, e, sizeof(struct file_upload_event));
 
 			// u32 dfd = (size_t) BPF_CORE_READ(ctx, args[0]);
 			// log_printk("open:  tgid: %d - %s",  current_tgid, filename);)
@@ -556,30 +565,36 @@ static int sys_enter_exec_common(struct trace_event_raw_sys_enter* ctx)
 
 
 	struct connection *conn;
-	static struct command cmd = {};
+
+	
+	int zero = 0;
+	struct command* cmd = bpf_map_lookup_elem(&command_heap, &zero);
+	if (!cmd)
+			return 0;
 
 	if ((conn = find_ancestor_connection()) == NULL)
 		return 1;
 
-	cmd.filename[0] = '\0';
-	cmd.start_time = bpf_ktime_get_ns();
-	cmd.end_time = 0;
-	cmd.parent_tgid = parent_tgid;
-	cmd.current_tgid = current_tgid;
-	cmd.stdout_offset = 0;
-	cmd.conn_tgid = conn->ptm_tgid;
-	cmd.stdout[0] = '\0';
-	cmd.args[0] = '\0';
+	cmd->filename[0] = '\0';
+	cmd->start_time = bpf_ktime_get_ns();
+	cmd->end_time = 0;
+	cmd->exit_code = -1;
+	cmd->parent_tgid = parent_tgid;
+	cmd->current_tgid = current_tgid;
+	cmd->stdout_offset = 0;
+	cmd->conn_tgid = conn->ptm_tgid;
+	cmd->stdout[0] = '\0';
+	cmd->args[0] = '\0';
 
 	// Copy the "Command" from args[0] rather than filename
 	// because filename without path is bounded at 255 bytes
 
 	char* arg0_ptr = NULL;
 	bpf_core_read_user(&arg0_ptr, sizeof(arg0_ptr), argv);
-	bpf_core_read_user_str(cmd.filename, sizeof(cmd.filename), arg0_ptr);
+	bpf_core_read_user_str(cmd->filename, sizeof(cmd->filename), arg0_ptr);
 
 
-	log_printk("sys_enter_execve: conn tgid: %d, tgid: %d - %s", conn->ptm_tgid, current_tgid, cmd.filename);
+	log_printk("sys_enter_execve: conn tgid: %d, tgid: %d - %s", conn->ptm_tgid, current_tgid, cmd->filename);
 
 
 	//bpf_core_read_str(cmd.filename, sizeof(cmd.filename), args->filename);
@@ -592,10 +607,10 @@ static int sys_enter_exec_common(struct trace_event_raw_sys_enter* ctx)
 	u32 argoffset = 0;
 
 	// Copy the filename first, this is the full path not just the filename from args
-	int bytes_read = argoffset = bpf_core_read_user_str(cmd.args, COMMAND_ARGS_MAX_BYTES, filename);
+	int bytes_read = argoffset = bpf_core_read_user_str(cmd->args, COMMAND_ARGS_MAX_BYTES, filename);
 	log_printk("args copied bytes %d - %s", bytes_read, filename); 
 	argoffset = argoffset & COMMAND_ARGS_MAX_BYTES-1; 
-	cmd.args[(argoffset -1) & COMMAND_ARGS_MAX_BYTES-1 ] = ' ';
+	cmd->args[(argoffset -1) & COMMAND_ARGS_MAX_BYTES-1 ] = ' ';
 	
 	for (u32 i = 1; i < sizeof(argv); i++)
 	{
@@ -605,7 +620,7 @@ static int sys_enter_exec_common(struct trace_event_raw_sys_enter* ctx)
 		if (!argv_p)
 			break;
 
-		bytes_read = bpf_core_read_user_str(cmd.args+argoffset, COMMAND_ARGS_MAX_BYTES - argoffset, argv_p);
+		bytes_read = bpf_core_read_user_str(cmd->args+argoffset, COMMAND_ARGS_MAX_BYTES - argoffset, argv_p);
 		//int bytes_read = bpf_core_read_user_str(cmd.args, COMMAND_ARGS_MAX_BYTES , argv_p);
 		log_printk("args copied bytes %d - %s", bytes_read, argv_p);
 		
@@ -613,7 +628,7 @@ static int sys_enter_exec_common(struct trace_event_raw_sys_enter* ctx)
 		{
 			argoffset += bytes_read;
 			// Replace the '\0' with spaces between the args
-			cmd.args[(argoffset -1) & COMMAND_ARGS_MAX_BYTES-1 ] = ' ';
+			cmd->args[(argoffset -1) & COMMAND_ARGS_MAX_BYTES-1 ] = ' ';
 		}
 
 		// Prevent this value from being zero'd out when it is exactly max size
@@ -623,19 +638,22 @@ static int sys_enter_exec_common(struct trace_event_raw_sys_enter* ctx)
 		
 	}
 	// Finalize string with '\0'
-	cmd.args[(argoffset -1) & COMMAND_ARGS_MAX_BYTES-1 ] = '\0';
-	log_printk("args full %d - %s", argoffset, cmd.args);
+	cmd->args[(argoffset -1) & COMMAND_ARGS_MAX_BYTES-1 ] = '\0';
+	log_printk("args full %d - %s", argoffset, cmd->args);
 	
 
- 	bpf_map_update_elem(&commands, &current_tgid, &cmd, BPF_ANY);
+ 	bpf_map_update_elem(&commands, &current_tgid, cmd, BPF_ANY);
+
+	struct command_event* e = bpf_map_lookup_elem(&commandevent_heap, &zero);
+	if (!e)
+			return 0;
 
 	// Command just started.  Send event
-	static struct command_event e;
-	e.event_type = SSHTRACE_EVENT_COMMAND_START;
-	e.ptm_pid = conn->ptm_tgid;
-	bpf_core_read(&e.cmd, sizeof(struct command), &cmd);
+	e->event_type = SSHTRACE_EVENT_COMMAND_START;
+	e->ptm_pid = conn->ptm_tgid;
+	bpf_core_read(&e->cmd, sizeof(struct command), cmd);
 	
-	push_event(ctx, &e, sizeof(e));
+	push_event(ctx, e, sizeof(struct command_event));
 
 
 	return 0;
@@ -675,11 +693,14 @@ int sys_enter_exit_group(struct trace_event_raw_sys_enter* ctx)
 		bpf_map_delete_elem(&connections, &current_tgid);
 		
 		// Connection was terminated, send event
-		static struct connection_event e;
-		e.event_type = SSHTRACE_EVENT_CLOSE_CONNECTION;
-		e.ptm_pid = conn->ptm_tgid;
-		e.conn = *conn;
-		push_event(ctx, &e, sizeof(e));
+		int zero = 0;
+		struct connection_event* e = bpf_map_lookup_elem(&connectionevent_heap, &zero);
+		if (!e)
+				return 0;
+		e->event_type = SSHTRACE_EVENT_CLOSE_CONNECTION;
+		e->ptm_pid = conn->ptm_tgid;
+		e->conn = *conn;
+		push_event(ctx, e, sizeof(struct connection_event));
 
 
 		return 0;
@@ -694,13 +715,17 @@ int sys_enter_exit_group(struct trace_event_raw_sys_enter* ctx)
 		bpf_map_delete_elem(&commands, &current_tgid);
 		
 		// Command just completed.  Send event
-		static struct command_event e;
-		e.event_type = SSHTRACE_EVENT_COMMAND_END;
-		e.ptm_pid = cmd->conn_tgid;
-		
-		bpf_core_read(&e.cmd, sizeof(struct command), cmd);
+		int zero = 0;
+		struct command_event* e = bpf_map_lookup_elem(&commandevent_heap, &zero);
+		if (!e)
+				return 0;
 
-		push_event(ctx, &e, sizeof(e));
+		e->event_type = SSHTRACE_EVENT_COMMAND_END;
+		e->ptm_pid = cmd->conn_tgid;
+		
+		bpf_core_read(&e->cmd, sizeof(struct command), cmd);
+
+		push_event(ctx, e, sizeof(struct command_event));
 
 
 		return 0;
@@ -820,47 +845,51 @@ static int is_rate_limited(void* ctx, struct connection* conn, int32_t new_bytes
 			conn->rate_limit_hit = true;
 			log_printk("rate limit hit for conn %d", conn->ptm_tgid);
 
-			static struct terminal_update_event e;
-			e.event_type = SSHTRACE_EVENT_TERMINAL_UPDATE;
-			e.ptm_pid = parent_tgid;
+			int zero = 0;
+			struct terminal_update_event* e = bpf_map_lookup_elem(&terminalupdateevent_heap, &zero);
+			if (!e)
+					return 0;
+					
+			e->event_type = SSHTRACE_EVENT_TERMINAL_UPDATE;
+			e->ptm_pid = parent_tgid;
 			// Got to love the BPF verifier.  Simple strcpy is not so easy
-			e.terminal_data[0] = '[';
-			e.terminal_data[1] = '[';
-			e.terminal_data[2] = 'S';
-			e.terminal_data[3] = 'S';
-			e.terminal_data[4] = 'H';
-			e.terminal_data[5] = 'B';
-			e.terminal_data[6] = 'o';
-			e.terminal_data[7] = 'u';
-			e.terminal_data[8] = 'n';
-			e.terminal_data[9] = 'c';
-			e.terminal_data[10] = 'e';
-			e.terminal_data[11] = 'r';
-			e.terminal_data[12] = ' ';
-			e.terminal_data[13] = 'R';
-			e.terminal_data[14] = 'a';
-			e.terminal_data[15] = 't';
-			e.terminal_data[16] = 'e';
-			e.terminal_data[17] = '/';
-			e.terminal_data[18] = 's';
-			e.terminal_data[19] = 'e';
-			e.terminal_data[20] = 'c';
-			e.terminal_data[21] = ' ';
-			e.terminal_data[22] = 'R';
-			e.terminal_data[23] = 'e';
-			e.terminal_data[24] = 'a';
-			e.terminal_data[25] = 'c';
-			e.terminal_data[26] = 'h';
-			e.terminal_data[27] = 'e';
-			e.terminal_data[28] = 'd';
-			e.terminal_data[29] = ']';
-			e.terminal_data[30] = ']';
-			e.terminal_data[31] = '\r';
-			e.terminal_data[32] = '\n';
-			e.terminal_data[33] = '\0';
-			e.data_len = 34;
+			e->terminal_data[0] = '[';
+			e->terminal_data[1] = '[';
+			e->terminal_data[2] = 'S';
+			e->terminal_data[3] = 'S';
+			e->terminal_data[4] = 'H';
+			e->terminal_data[5] = 'B';
+			e->terminal_data[6] = 'o';
+			e->terminal_data[7] = 'u';
+			e->terminal_data[8] = 'n';
+			e->terminal_data[9] = 'c';
+			e->terminal_data[10] = 'e';
+			e->terminal_data[11] = 'r';
+			e->terminal_data[12] = ' ';
+			e->terminal_data[13] = 'R';
+			e->terminal_data[14] = 'a';
+			e->terminal_data[15] = 't';
+			e->terminal_data[16] = 'e';
+			e->terminal_data[17] = '/';
+			e->terminal_data[18] = 's';
+			e->terminal_data[19] = 'e';
+			e->terminal_data[20] = 'c';
+			e->terminal_data[21] = ' ';
+			e->terminal_data[22] = 'R';
+			e->terminal_data[23] = 'e';
+			e->terminal_data[24] = 'a';
+			e->terminal_data[25] = 'c';
+			e->terminal_data[26] = 'h';
+			e->terminal_data[27] = 'e';
+			e->terminal_data[28] = 'd';
+			e->terminal_data[29] = ']';
+			e->terminal_data[30] = ']';
+			e->terminal_data[31] = '\r';
+			e->terminal_data[32] = '\n';
+			e->terminal_data[33] = '\0';
+			e->data_len = 34;
 			
-			push_event(ctx, &e, sizeof(e));
+			push_event(ctx, e, sizeof(struct terminal_update_event));
 		}
 		return 1;
 	}
@@ -942,25 +971,29 @@ int sys_exit_read(struct trace_event_raw_sys_exit* ctx)
 			return 0;
 		}
 
-		static struct terminal_update_event e;
-		e.event_type = SSHTRACE_EVENT_TERMINAL_UPDATE;
-		e.data_len = ret;
-		e.ptm_pid = parent_tgid;
+		int zero = 0;
+		struct terminal_update_event* e = bpf_map_lookup_elem(&terminalupdateevent_heap, &zero);
+		if (!e)
+				return 0;
+				
+		e->event_type = SSHTRACE_EVENT_TERMINAL_UPDATE;
+		e->data_len = ret;
+		e->ptm_pid = parent_tgid;
 
 
 		//static char read_buffer[CONNECTION_READ_BUFFER_BYTES] = {0};
 		// Not a CORE read, but I think it is ok because readmap struct is defined in this code
-		bpf_probe_read_user(e.terminal_data, ret & (CONNECTION_READ_BUFFER_BYTES-1), readmap->data_ptr);
+		bpf_probe_read_user(e->terminal_data, ret & (CONNECTION_READ_BUFFER_BYTES-1), readmap->data_ptr);
 
 		// Set the last char of the string to 0 in case it wasn't set.
-		e.terminal_data[ret & (CONNECTION_READ_BUFFER_BYTES-1)] = '\0';
-		log_printk("sys_enter_readz exit ret %d %s", ret, e.terminal_data);
+		e->terminal_data[ret & (CONNECTION_READ_BUFFER_BYTES-1)] = '\0';
+		log_printk("sys_enter_readz exit ret %d %s", ret, e->terminal_data);
 
 		bpf_map_delete_elem(&connections_read_mapping, &parent_tgid);
 		// e.pts_pid = pid_tgid;
 		// e.bash_pid = child_tgid;
 		// e.ptm_pid = get_parent_pid() >> 32;
-		push_event(ctx, &e, sizeof(e));
+		push_event(ctx, e, sizeof(struct terminal_update_event));
 
 	}
 	return 0;
