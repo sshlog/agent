@@ -55,12 +55,16 @@ ExistingConnections::ExistingConnections() {
 
       // Convert process start time to CLOCK_MONOTONIC time
       // to match what comes out of BPF
-      // Take current boottime (nanoseconds) and subtract proc uptime (nanoseconds)
+      // Take process start time (measured in "jiffies" since bootup, and convert to nanoseconds)
+      // BPF is using nanos since boot
       const int NANOS_IN_A_SEC = 1000000000;
-      struct timespec boottime;
-      clock_gettime(CLOCK_MONOTONIC, &boottime);
-      session.start_time =
-          (boottime.tv_sec * NANOS_IN_A_SEC) + boottime.tv_nsec - (process.get_stat().utime * NANOS_IN_A_SEC);
+      // https://unix.stackexchange.com/questions/62154/when-was-a-process-started
+      static int JIFFIES_PER_SECOND = sysconf(_SC_CLK_TCK);
+
+      int64_t proc_start_seconds_after_boot = process.get_stat().starttime / sysconf(_SC_CLK_TCK);
+      int64_t proc_start_nanos_after_boot = proc_start_seconds_after_boot * NANOS_IN_A_SEC;
+
+      session.start_time = proc_start_nanos_after_boot;
 
       session.user_id = process.get_status().uid.real;
 
