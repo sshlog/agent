@@ -5,12 +5,12 @@ import logging
 from uuid import uuid4
 from .mq_base import NAMED_PIPE_REQ_PATH, NAMED_PIPE_RESP_PATH
 
+logger = logging.getLogger('sshbouncer_client')
 
 class MQClient:
     def __init__(self):
         # Generate a pseudo-random "client id" for each MQClient
         self.client_id = uuid4().__str__()
-        self.logger = logging.getLogger('sshbouncer_client')
 
         self.context = zmq.Context()
         self.req_socket = self.context.socket(zmq.PUSH)
@@ -28,9 +28,9 @@ class MQClient:
         msg = RequestMessage(dto_payload, self.client_id, correlation_id)
         correlation_id = msg.correlation_id
         raw_data = msg.to_json()
-        self.logger.debug(f"Request: {raw_data}")
+        logger.debug(f"Request: {raw_data}")
         resp = self.req_socket.send(raw_data.encode('utf-8'))
-        self.logger.debug(f"response {resp}")
+        logger.debug(f"response {resp}")
         return correlation_id
 
 
