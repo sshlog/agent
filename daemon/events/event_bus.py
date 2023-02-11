@@ -1,5 +1,10 @@
 from blinker import signal
 from comms.event_types import *
+import concurrent.futures
+import os
+
+# Assume most event handling is IO-bound.  Default to use 4 threads per CPU core
+event_threadpool_executor = concurrent.futures.ThreadPoolExecutor(max_workers=os.cpu_count()*4)
 
 # Use the event types from comms.event_types
 sshtrace_event_signals = {}
@@ -41,5 +46,5 @@ def eventbus_sshtrace_push(event_data, session_tracker):
             event_data['username'] = ''
             event_data['tty_id'] = ''
 
-
-    sshtrace_event_signals[event_type].send(event_data)
+    # Run on multiple threads
+    event_threadpool_executor.submit(sshtrace_event_signals[event_type].send, event_data)
