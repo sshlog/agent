@@ -6,7 +6,6 @@ class Tracker:
 
     def __init__(self):
         self.connections = {}
-        self.commands = {}
 
         eventbus_sshtrace_subscribe(self.connection_open, SSHTRACE_EVENT_NEW_CONNECTION)
         eventbus_sshtrace_subscribe(self.connection_established, SSHTRACE_EVENT_ESTABLISHED_CONNECTION)
@@ -50,7 +49,5 @@ class Tracker:
             return self.connections[session_pid]
         return None
 
-    def get_commands(self):
-        self.commands.values()
 
 
