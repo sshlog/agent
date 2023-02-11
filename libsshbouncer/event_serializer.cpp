@@ -142,7 +142,7 @@ char* serialize_event(void* event_struct) {
 
     const struct terminal_update_event* e = (const struct terminal_update_event*) event_struct;
     yyjson_mut_obj_add_int(doc, root, "ptm_pid", e->ptm_pid);
-    yyjson_mut_obj_add_str(doc, root, "terminal_data", e->terminal_data);
+    yyjson_mut_obj_add_str(doc, root, "terminal_data", e->aggregated_data.c_str());
     yyjson_mut_obj_add_int(doc, root, "data_len", e->data_len);
   } else if (e_generic->event_type == SSHTRACE_EVENT_FILE_UPLOAD) {
 

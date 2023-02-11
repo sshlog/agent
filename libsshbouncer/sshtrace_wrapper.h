@@ -2,6 +2,7 @@
 #define SSHBOUNCER_SSHTRACE_WRAPPER_H
 
 #include "sshtrace.skel.h"
+#include "terminal_aggregator.h"
 #include "utility/blockingconcurrentqueue.h"
 #include <stdint.h>
 #include <thread>
@@ -39,6 +40,7 @@ class SSHTraceWrapper {
 
  private:
   moodycamel::BlockingConcurrentQueue<char*> q;
+  TerminalAggregator terminal_aggregator;
   std::unique_ptr<std::thread> bpf_poll_thread;
 };
 

@@ -57,7 +57,7 @@ def run_main():
 
         try:
             while sshb.is_ok():
-                event_data = sshb.poll(timeout=100)
+                event_data = sshb.poll(timeout_ms=15)
                 if event_data is not None:
                     logger.debug(event_data)
                     eventbus_sshtrace_push(event_data, session_tracker)

@@ -3,6 +3,7 @@
 #include "event_serializer.h"
 #include "proc_parsers/existing_connections.h"
 #include "proc_parsers/pts_parser.h"
+#include "terminal_aggregator.h"
 #include <argp.h>
 #include <arpa/inet.h>
 #include <iostream>
@@ -15,6 +16,8 @@
 #include <time.h>
 
 namespace sshbouncer {
+
+const int AGGREGATE_TERMINAL_MILLISECONDS_DELAY = 20;
 
 // local prototypes
 static struct connection create_connection(struct ssh_session existing_session);
@@ -48,7 +51,7 @@ static void bpf_poll_loop(SSHTraceWrapper* ctx) {
     PLOG_WARNING << "Exiting BPF polling due to error code " << ctx->bpf_err_code;
 }
 
-SSHTraceWrapper::SSHTraceWrapper() {
+SSHTraceWrapper::SSHTraceWrapper() : terminal_aggregator(AGGREGATE_TERMINAL_MILLISECONDS_DELAY) {
 
   // First, identify all existing SSH connections and insert them.
   // The BPF hooks will only identify new connections moving forward
@@ -140,6 +143,13 @@ SSHTraceWrapper::~SSHTraceWrapper() {
 
 char* SSHTraceWrapper::poll(int timeout_ms) {
 
+  // First check for events on the terminal aggregator
+  // We do this here, rather than when the events come in so that it's always triggered at a poll interval
+  for (terminal_update_event term_ev : terminal_aggregator.get()) {
+    char* json_data = serialize_event(&term_ev);
+    q.enqueue(json_data);
+  }
+
   const int MICROSEC_IN_A_MILLISEC = 1000;
   char* obj;
   bool success = q.wait_dequeue_timed(obj, timeout_ms * MICROSEC_IN_A_MILLISEC);
@@ -155,8 +165,18 @@ char* SSHTraceWrapper::poll(int timeout_ms) {
 }
 
 void SSHTraceWrapper::queue_event(void* event_struct) {
-  char* json_data = serialize_event(event_struct);
-  q.enqueue(json_data);
+
+  // If this is a terminal update event, send it to the aggregator, don't enqueue
+  const struct event* e_generic = (const struct event*) event_struct;
+  if (e_generic->event_type == SSHTRACE_EVENT_TERMINAL_UPDATE) {
+
+    const struct terminal_update_event* e = (const struct terminal_update_event*) event_struct;
+
+    terminal_aggregator.add(e->ptm_pid, e->terminal_data);
+  } else {
+    char* json_data = serialize_event(event_struct);
+    q.enqueue(json_data);
+  }
 }
 
 static int libbpf_print_fn(enum libbpf_print_level level, const char* format, va_list args) {

@@ -40,7 +40,7 @@ int main(int argc, const char** argv) {
 
   SSHBOUNCER* sshb_inst = sshbouncer_init(&opts);
   while (!exiting && sshbouncer_is_ok(sshb_inst) == 0) {
-    char* json_data = sshbouncer_event_poll(sshb_inst, 100);
+    char* json_data = sshbouncer_event_poll(sshb_inst, 15);
     if (json_data != nullptr) {
       std::cout << json_data << std::endl;
       sshbouncer_event_release(json_data);

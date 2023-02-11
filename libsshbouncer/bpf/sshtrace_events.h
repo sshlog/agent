@@ -4,6 +4,7 @@
 #ifndef __clang__
 // Only include this for outside BPF code.  BPF code compiles w/ clang
 #include <stdint.h>
+#include <string>
 #endif
 
 #include "sshtrace_types.h"
@@ -48,6 +49,12 @@ struct terminal_update_event {
   uint32_t ptm_pid;
   char terminal_data[CONNECTION_READ_BUFFER_BYTES];
   int32_t data_len;
+
+#ifndef __clang__
+  // Outside of BPF, we'll aggregate this data over a time delta
+  // Need a higher limit than what the char buffer allows
+  std::string aggregated_data;
+#endif
 };
 
 struct connection_event {
@@ -74,6 +81,5 @@ struct file_upload_event {
   char target_path[2048];
   uint32_t file_mode;
 };
-
 
 #endif

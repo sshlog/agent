@@ -11,7 +11,7 @@ else:
     import json
 
 # Load the C library
-lib = ctypes.CDLL('/storage/projects/sshwatcher/agent/build/libsshbouncer/libsshbouncer.so')
+lib = ctypes.CDLL('/storage/projects/sshbouncer/agent/build/libsshbouncer/libsshbouncer.so')
 
 class SSHBOUNCER(ctypes.Structure):
     pass
@@ -62,12 +62,12 @@ class SSHBouncer(object):
     def is_ok(self):
         return lib.sshbouncer_is_ok(self._instance) == 0
 
-    def poll(self, timeout=100):
+    def poll(self, timeout_ms=100):
         # Call the sshbouncer_event_poll function
         if not self.is_ok():
             return None
 
-        ptr = lib.sshbouncer_event_poll(self._instance, timeout)
+        ptr = lib.sshbouncer_event_poll(self._instance, timeout_ms)
         event_data = ctypes.cast(ptr, ctypes.c_char_p).value
         if event_data is not None:
             resp = json.loads(event_data.decode('utf-8'))
