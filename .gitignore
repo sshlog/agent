@@ -1,4 +1,7 @@
 build/
 .vscode/
+.idea/
 unused/
 unused2/
+__pycache__/
+*.bak
