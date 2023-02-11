@@ -6,6 +6,7 @@ import os
 from sshbouncer import SSHBouncer
 from trackers.tracker import Tracker
 from events.event_bus import eventbus_sshtrace_push
+from plugins.common.plugin_manager import PluginManager
 
 def run_main():
 
@@ -49,6 +50,16 @@ def run_main():
     # Create Tracker
     session_tracker = Tracker()
 
+    # Initialize the plugins
+    plugin_manager = PluginManager(['/etc/sshbouncer/sshbouncer.yaml'], session_tracker, user_plugin_dirs=['/etc/sshbouncer/plugins/'])
+    if not plugin_manager.plugins_ok():
+        for validation_error in plugin_manager.validation_errors:
+            logger.warning(validation_error)
+        logger.error("Unable to load plugins due to configuration issues. Exiting")
+        return
+    plugin_manager.initialize_plugins()
+
+
     # Spin up local MQ server to start listening
     server = MQLocalServer(session_tracker)
     server.start()
@@ -65,6 +76,7 @@ def run_main():
             pass
 
     server.shutdown()
+    plugin_manager.shutdown()
 
 
 if __name__ == "__main__":
