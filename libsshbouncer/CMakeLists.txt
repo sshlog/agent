@@ -99,6 +99,7 @@ target_link_libraries(sshbouncer
   yyjson
   pfs
   plog
+  pthread
   elf
   z
 )
