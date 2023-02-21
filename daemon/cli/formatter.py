@@ -7,6 +7,7 @@ import time
 from comms.event_types import *
 import datetime
 import timeago
+import timeago.locales.en # Import this explicitly so that pyinstaller finds it
 
 logger = logging.getLogger('sshbouncer_client')
 
@@ -15,7 +16,7 @@ def _convert_epoch_ms_to_time(epoch_ms):
 
 def _convert_epoch_ms_to_time_ago(epoch_ms):
     dt = datetime.datetime.fromtimestamp(epoch_ms/1000)
-    return timeago.format(dt, datetime.datetime.now())
+    return timeago.format(dt, datetime.datetime.now(), 'en')
 
 
 def print_sessions(sessions_list: SessionListResponseDto, output_json=False):
