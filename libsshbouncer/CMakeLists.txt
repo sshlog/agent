@@ -119,3 +119,5 @@ if(USE_RINGBUF)
   target_compile_definitions(sshbouncer PUBLIC SSHTRACE_USE_RINGBUF)
 endif()
 
+set_target_properties(sshbouncer PROPERTIES SOVERSION 1)
+install (TARGETS sshbouncer   DESTINATION    ${CMAKE_INSTALL_PREFIX}/lib)
