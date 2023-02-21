@@ -14,6 +14,7 @@ cp signing_keys/private.pgp ${VOL_SHARE_DIR}
 git-archive-all --force-submodules --prefix=sshbouncer/ ${VOL_SHARE_DIR}/sshbouncer.tar.gz
 cd $VOL_SHARE_DIR
 tar xvfz sshbouncer.tar.gz
+ln -s ${VOL_SHARE_DIR}/sshbouncer/distros/debian/ ${VOL_SHARE_DIR}/sshbouncer/debian
 
 
 HOST_USER_ID=$(id -u)
@@ -25,7 +26,6 @@ echo """#!/bin/bash
 gpg --import ${VOL_SHARE_DIR}/private.pgp
 
 cd ${VOL_SHARE_DIR}/sshbouncer/
-pip3 install -r daemon/requirements.txt 
 debuild -b
 chown ${HOST_USER_ID}:${HOST_GROUP_ID} ${VOL_SHARE_DIR}/* -R
 """ > ${VOL_SHARE_DIR}/sshbouncer/pack.sh
