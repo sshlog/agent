@@ -106,11 +106,10 @@ class sessionlog_action(ActionPlugin):
 
             with open(output_path, 'a') as log_out:
                 log_out.write(cleaned_terminal_data)
-            with open(output_path + '.orig', 'a') as log_out:
-                log_out.write(terminal_data)
-            with open(output_path + '.mid', 'a') as log_out:
-                log_out.write(decolored_terminal_data)
 
-        elif event_data['event_type'] == SSHTRACE_EVENT_CLOSE_CONNECTION or event_data['event_type'] == SSHTRACE_EVENT_ESTABLISHED_CONNECTION:
-            content = f"\n[[ sshbouncer {event_data['event_type']} user: {event_data['username']} ]]\n"
+            # Intermediate outputs for debugging
+            # with open(output_path + '.orig', 'a') as log_out:
+            #     log_out.write(terminal_data)
+            # with open(output_path + '.mid', 'a') as log_out:
+            #     log_out.write(decolored_terminal_data)
             self.write_data(output_path, content)
