@@ -67,7 +67,6 @@ class MQResponseThread(threading.Thread):
                 # Send any response messages that have arrived on the queue
                 try:
                     response_message = self.response_queue.get(timeout=0.1)  # type: ResponseMessage
-                    print(f"SENDING RESPONSE {response_message}")
                     self.zmq_socket.send_string(f"{response_message.client_id} {response_message.to_json()}")
                     self.response_queue.task_done()
                 except queue.Empty:
