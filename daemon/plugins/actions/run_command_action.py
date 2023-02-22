@@ -3,8 +3,9 @@ import subprocess
 
 class run_command_action(ActionPlugin):
 
-    def init_action(self, command, args=[]):
+    def init_action(self, command, args=[], timeout=None):
         self.command = command
+        self.timeout = timeout
         self.args = args
         self.logger.info(f"Initialized action {self.name} with command {command}")
 
@@ -19,4 +20,4 @@ class run_command_action(ActionPlugin):
         args_list.extend(self.args)
 
         self.logger.debug(f"Executing command f{args_list}")
-        subprocess.call(args_list)
+        subprocess.call(args_list)        self.logger.info(f"{self.name} Command action triggered on {event_data['event_type']} executing {args_list}")
