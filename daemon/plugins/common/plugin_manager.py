@@ -30,6 +30,7 @@ class PluginManager:
         self.destinations = []
 
         for cfg in yaml_configs:
+            logger.info(f"Reading config file {cfg}")
             if not os.path.exists(cfg):
                 logger.warning(f"Configuration file {cfg} does not exist.  Skipping")
                 continue
