@@ -4,7 +4,7 @@ After=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/sshbouncerd --logfile /var/log/sshbouncerd.log
+ExecStart=/usr/bin/sshbouncerd --logfile /var/log/sshbouncer/sshbouncerd.log
 
 [Install]
 WantedBy=multi-user.target
