@@ -94,7 +94,6 @@ def run_main():
             while sshb.is_ok():
                 event_data = sshb.poll(timeout_ms=15)
                 if event_data is not None:
-                    logger.debug(event_data)
                     eventbus_sshtrace_push(event_data, session_tracker)
         except KeyboardInterrupt:
             pass
