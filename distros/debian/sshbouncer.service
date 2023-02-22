@@ -1,0 +1,10 @@
+[Unit]
+Description=SSHBouncer Agent Service
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/sshbouncerd
+
+[Install]
+WantedBy=multi-user.target
