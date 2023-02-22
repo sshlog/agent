@@ -1,5 +1,6 @@
 import argparse
 import logging
+from logging.handlers import RotatingFileHandler
 from comms.mq_server import MQLocalServer
 import sys
 import os
@@ -12,6 +13,7 @@ def run_main():
 
     parser = argparse.ArgumentParser(description="SSHBouncer Daemon")
 
+    parser.add_argument("-l", "--logfile", default=None, help='Path to log file')
 
     # parser.add_argument("-k", "--key", default=os.getenv('OPENREPO_APIKEY', ''), help='API key')
     # parser.add_argument("-s", "--server", default=os.getenv('OPENREPO_SERVER', 'http://localhost:7376'),
@@ -32,20 +34,28 @@ def run_main():
 
     # create logger
     logger = logging.getLogger('sshbouncer_daemon')
-    ch = logging.StreamHandler(stream=sys.stdout)
+
+    if args.logfile is not None:
+        # add a rotating handler
+        handler = RotatingFileHandler(args.logfile, maxBytes=5000000,
+                                      backupCount=5)
+    else:
+        handler = logging.StreamHandler(stream=sys.stdout)
+
     if args.debug:
         logger.setLevel(logging.DEBUG)
-        ch.setLevel(logging.DEBUG)
+        handler.setLevel(logging.DEBUG)
         formatter = logging.Formatter('%(asctime)s - %(filename)s:%(lineno)d - %(levelname)s - %(message)s')
     else:
         logger.setLevel(logging.INFO)
-        ch.setLevel(logging.INFO)
+        handler.setLevel(logging.INFO)
         formatter = logging.Formatter('%(message)s')
 
-    ch.setFormatter(formatter)
+
+    handler.setFormatter(formatter)
 
     # add ch to logger
-    logger.addHandler(ch)
+    logger.addHandler(handler)
 
     if os.geteuid() != 0:
         logger.warning("You must have root privileges to run the daemon.\nPlease try again as root or use 'sudo'.")
