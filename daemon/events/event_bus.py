@@ -54,3 +54,4 @@ def eventbus_sshtrace_push(event_data, session_tracker):
 
     # Run on multiple threads
     event_threadpool_executor.submit(sshtrace_event_signals[event_type].send, event_data)
+    #sshtrace_event_signals[event_type].send(event_data)
