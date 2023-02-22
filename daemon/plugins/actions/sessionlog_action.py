@@ -14,7 +14,7 @@ key_to_text_mapping = {
     '\x06': '[Ctrl+F]',
     #'\x07': '[Ctrl+G]',
     '\x07': '',
-    '\x08': '[BACKSPACE]',
+    '\x08': '[←]', # Backspace/left arrow
     '\x0b': '[Ctrl+K]',
     '\x0c': '[Ctrl+L]',
     '\x0e': '[Ctrl+N]',
@@ -36,7 +36,7 @@ key_to_text_mapping = {
     '\x1f': '[Ctrl+/]',
     '\x7f': '[<--]',
     '\x5d0;': '', # Not sure what this character is, but it shows up on first line of terminal after coloring
-    '\t': '[Tab]',
+    #'\t': '[Tab]',
     '\r': ''
    }
 
