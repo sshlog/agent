@@ -11,7 +11,7 @@ else:
     import json
 
 # Load the C library
-lib = ctypes.CDLL('/storage/projects/sshbouncer/agent/build/libsshbouncer/libsshbouncer.so')
+lib = ctypes.CDLL('libsshbouncer.so.1')
 
 class SSHBOUNCER(ctypes.Structure):
     pass
