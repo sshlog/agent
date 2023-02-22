@@ -1,0 +1,10 @@
+
+  - event: sudo_success
+    triggers: [ 'connection_established']
+    filters:
+      require_tty: True
+      ignore_existing_logins: True
+    actions:
+      - action: send_to_slack
+        plugin: slack_action
+        slack_webhook_url: 'https://hooks.slack.com/services/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'

@@ -1,0 +1,9 @@
+  - event: stream_terminal
+    triggers: ['connection_established', 'connection_close', 'terminal_update']
+    filters:
+      ignore_existing_logins: True
+    actions:
+      - action: log_all_sessions
+        plugin: sessionlog_action
+        log_directory: '/var/log/sshbouncer/sessions/'
+        timestamp_frequency_seconds: 60

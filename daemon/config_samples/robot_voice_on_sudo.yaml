@@ -1,0 +1,13 @@
+# Requires that the "espeak" package be installed on your computer
+
+  - event: sudo_success
+    triggers: [ 'command_finish']
+    filters:
+      command_name: 'sudo'
+      command_exit_code: '= 0'
+      require_tty: True
+    actions:
+      - action: say_words
+        plugin: run_command_action
+        command: espeak
+        args: ["User {{username}} has executed sudo to root"]
