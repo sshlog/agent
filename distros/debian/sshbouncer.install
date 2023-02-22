@@ -3,3 +3,4 @@ usr/bin/sshbouncer
 usr/lib/libsshbouncer.so.1
 etc/sshbouncer/conf.d
 etc/sshbouncer/samples/*
+var/log/sshbouncer
