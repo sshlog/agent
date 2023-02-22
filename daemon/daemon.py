@@ -64,8 +64,18 @@ def run_main():
     # Create Tracker
     session_tracker = Tracker()
 
+    # Load config files from /etc/sshbouncer/sshbouncer.yaml as well as any files in /etc/sshbouncer/conf.d/
+    CONF_D_DIR = '/etc/sshbouncer/conf.d/'
+    conf_files = ['/etc/sshbouncer/sshbouncer.yaml']
+    if os.path.isdir(CONF_D_DIR):
+        for conf_file in os.listdir(CONF_D_DIR):
+            if conf_file.endswith('.yaml') or conf_file.endswith('.yml'):
+                conf_files.append(os.path.join(CONF_D_DIR, conf_file))
+
     # Initialize the plugins
-    plugin_manager = PluginManager(['/etc/sshbouncer/sshbouncer.yaml'], session_tracker, user_plugin_dirs=['/etc/sshbouncer/plugins/'])
+    plugin_manager = PluginManager(conf_files,
+                                   session_tracker,
+                                   user_plugin_dirs=['/etc/sshbouncer/plugins/'])
     if not plugin_manager.plugins_ok():
         for validation_error in plugin_manager.validation_errors:
             logger.warning(validation_error)
