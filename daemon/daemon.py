@@ -47,6 +47,10 @@ def run_main():
     # add ch to logger
     logger.addHandler(ch)
 
+    if os.geteuid() != 0:
+        logger.warning("You must have root privileges to run the daemon.\nPlease try again as root or use 'sudo'.")
+        return
+
     # Create Tracker
     session_tracker = Tracker()
 
