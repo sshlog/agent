@@ -36,6 +36,12 @@ def run_main():
     logger = logging.getLogger('sshbouncer_daemon')
 
     if args.logfile is not None:
+        dirpath = os.path.dirname(args.logfile)
+        if not os.path.isdir(dirpath):
+            os.makedirs(dirpath)
+        if not os.path.isdir(dirpath):
+            print(f"Unable to create log directory {dirpath}\nexiting.")
+            return
         # add a rotating handler
         handler = RotatingFileHandler(args.logfile, maxBytes=5000000,
                                       backupCount=5)

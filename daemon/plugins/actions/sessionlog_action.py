@@ -52,6 +52,11 @@ class sessionlog_action(ActionPlugin):
 
         self.last_timestamp = 0.0
 
+        # Ensure directory exists
+        if not os.path.isdir(log_directory):
+            # Make the directory readable only by owner (root)
+            os.makedirs(log_directory, 700)
+
     def shutdown_action(self):
         pass
 

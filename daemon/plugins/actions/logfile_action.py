@@ -2,6 +2,7 @@ from plugins.common.plugin import ActionPlugin
 import logging
 from logging.handlers import RotatingFileHandler
 import json
+import os
 
 class logfile_action(ActionPlugin):
 
@@ -11,12 +12,19 @@ class logfile_action(ActionPlugin):
         self.number_of_log_files = number_of_log_files
         self.logger.info(f"Initialized action {self.name} with log file path {log_file_path}")
 
+        # Ensure directory exists for log file
+        dirpath = os.path.dirname(log_file_path)
+        if not os.path.isdir(dirpath):
+            os.makedirs(dirpath)
+
         self.file_logger = logging.getLogger(f'{self.name} logger')
         handler = RotatingFileHandler(self.log_file_path, maxBytes=self.max_size_mb*1024, backupCount=self.number_of_log_files)
         formatter = logging.Formatter('%(asctime)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
         handler.setFormatter(formatter)
         self.file_logger.addHandler(handler)
         self.file_logger.setLevel(logging.DEBUG)
+
+
 
     def shutdown_action(self):
         pass
