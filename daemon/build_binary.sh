@@ -14,7 +14,12 @@ pip3 install -r ${SCRIPT_DIR}/requirements.txt
 # For example, output will be --hidden-import slack_sdk --hidden-import requests
 HIDDEN_IMPORTS=$(findimports --ignore-stdlib  ${SCRIPT_DIR}/plugins/actions/ ${SCRIPT_DIR}/plugins/filters/ | grep -v 'plugins\.' | grep -v "^\s*$" | sed 's/^\s*/--hidden-import /g' | xargs)
 
-pyinstaller --onefile $HIDDEN_IMPORTS ${SCRIPT_DIR}/daemon.py -n sshbouncerd
+# Grab all the plugins and add them to the package so that they can be loaded dynamically at runtime
+# format is --add-data 'plugins/actions/logfile_action.py:plugins/actions'
+ACTION_PLUGINS=$(find $SCRIPT_DIR/plugins/actions -name "*.py" | awk '{print "--add-data " $1 ":plugins/actions";}' | xargs)
+FILTER_PLUGINS=$(find $SCRIPT_DIR/plugins/filters -name "*.py" | awk '{print "--add-data " $1 ":plugins/filters";}' | xargs)
+
+pyinstaller --onefile $HIDDEN_IMPORTS $ACTION_PLUGINS $FILTER_PLUGINS ${SCRIPT_DIR}/daemon.py -n sshbouncerd
 
 # Build client
 
