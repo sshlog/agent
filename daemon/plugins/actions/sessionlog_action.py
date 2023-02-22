@@ -112,4 +112,13 @@ class sessionlog_action(ActionPlugin):
             #     log_out.write(terminal_data)
             # with open(output_path + '.mid', 'a') as log_out:
             #     log_out.write(decolored_terminal_data)
+
+        elif event_data['event_type'] == SSHTRACE_EVENT_CLOSE_CONNECTION:
+            end_time_iso_8601 = datetime.datetime.utcfromtimestamp(event_data['end_time'] / 1000.0).isoformat() + 'Z'
+            content = f"\n[[ sshbouncer {event_data['event_type']} user: {event_data['username']} at {end_time_iso_8601} ]]\n"
+            self.write_data(output_path, content)
+
+        elif event_data['event_type'] == SSHTRACE_EVENT_ESTABLISHED_CONNECTION:
+            start_time_iso_8601 = datetime.datetime.utcfromtimestamp(event_data['start_time'] / 1000.0).isoformat() + 'Z'
+            content = f"\n[[ sshbouncer {event_data['event_type']} user: {event_data['username']} at {start_time_iso_8601} ]]\n"
             self.write_data(output_path, content)
