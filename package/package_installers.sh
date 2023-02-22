@@ -1,6 +1,8 @@
 #!/bin/bash
 
-docker build -t openkilt/builder:ubuntu2004 .
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+docker build -t openkilt/builder:ubuntu2004 ${SCRIPT_DIR}
 
 VOL_SHARE_DIR=/tmp/sshbouncer-pack
 TAR_FILE_NAME=sshbouncer
@@ -9,7 +11,7 @@ rm -Rf $VOL_SHARE_DIR
 mkdir -p $VOL_SHARE_DIR
 
 # Copy the signing key
-cp signing_keys/private.pgp ${VOL_SHARE_DIR}
+cp ${SCRIPT_DIR}/signing_keys/private.pgp ${VOL_SHARE_DIR}
 
 git-archive-all --force-submodules --prefix=sshbouncer/ ${VOL_SHARE_DIR}/sshbouncer.tar.gz
 cd $VOL_SHARE_DIR
@@ -34,4 +36,8 @@ chmod +x ${VOL_SHARE_DIR}/sshbouncer/pack.sh
 
 docker run --rm -v ${VOL_SHARE_DIR}:${VOL_SHARE_DIR} -it openkilt/builder:ubuntu2004 ${VOL_SHARE_DIR}/sshbouncer/pack.sh
 
-echo "Deb packages available in ${VOL_SHARE_DIR}"
+rmdir -Rf ${SCRIPT_DIR}/dist 2>/dev/null
+mkdir -p ${SCRIPT_DIR}/dist 2>/dev/null
+
+cp ${VOL_SHARE_DIR}/*.deb ${SCRIPT_DIR}/dist/
+echo "Deb packages available in ${SCRIPT_DIR}/dist/"
