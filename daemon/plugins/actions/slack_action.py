@@ -40,6 +40,7 @@ class slack_action(ActionPlugin):
             self.logger.warning("Terminal update events probably should not be sent to slack.  Assuming misconfigurationand skipping")
             return
 
+        self.logger.info(f"{self.name} Slack action triggered on {event_data['event_type']} sending slack message")
         content = {
             'text': message
         }

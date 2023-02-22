@@ -23,5 +23,7 @@ class webhook_action(ActionPlugin):
             url = self.webhook_url
             response = requests.post(url, data=event_data)
 
+        self.logger.info(f"{self.name} webhook action triggered on {event_data['event_type']}")
+
         if response.status_code != 200:
             self.logger.info(f"Received {response.status_code} response for webhook action {self.name}")
