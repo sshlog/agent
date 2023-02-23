@@ -14,6 +14,8 @@ class eventlogfile_action(ActionPlugin):
         self.number_of_log_files = number_of_log_files
         self.logger.info(f"Initialized action {self.name} with log file path {log_file_path}")
 
+        self.event_type_padding = self._max_string_length(SSHTRACE_ALL_EVENTS)
+
         # Ensure directory exists for log file
         dirpath = os.path.dirname(log_file_path)
         if not os.path.isdir(dirpath):
@@ -33,6 +35,13 @@ class eventlogfile_action(ActionPlugin):
     def shutdown_action(self):
         pass
 
+    def _max_string_length(self, arr):
+        max_length = 0
+        for element in arr:
+            if len(element) > max_length:
+                max_length = len(element)
+        return max_length
+
     def execute(self, event_data):
 
         if self.output_json:
@@ -40,7 +49,7 @@ class eventlogfile_action(ActionPlugin):
         else:
             # Reformat each item into a log-friendly format
 
-            str_format = f"{event_data['event_type']}: ({event_data['ptm_pid']}) "
+            str_format = f"{event_data['event_type']:{self.event_type_padding}}: ({event_data['ptm_pid']}) "
 
             if event_data['event_type'] == SSHTRACE_EVENT_NEW_CONNECTION:
                 str_format += f" from ip {self._client_ip_str(event_data)}"
