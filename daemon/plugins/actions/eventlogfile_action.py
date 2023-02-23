@@ -4,7 +4,7 @@ from logging.handlers import RotatingFileHandler
 import json
 import os
 
-class logfile_action(ActionPlugin):
+class eventlogfile_action(ActionPlugin):
 
     def init_action(self, log_file_path, max_size_mb=20, number_of_log_files=2):
         self.log_file_path = log_file_path

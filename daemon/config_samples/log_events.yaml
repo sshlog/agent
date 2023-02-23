@@ -5,7 +5,7 @@ events:
       ignore_existing_logins: True
     actions:
       - action: log_events
-        plugin: logfile_action
+        plugin: eventlogfile_action
         log_file_path: /var/log/sshbouncer/event.log
         max_size_mb: 10
         number_of_log_files: 5
