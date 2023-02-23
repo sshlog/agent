@@ -1,6 +1,12 @@
 events:
   - event: log_general_activity
-    triggers: ['connection_new', 'connection_established', 'connection_close', 'command_finish', 'file_upload']
+    triggers:
+      - connection_new
+      - connection_established
+      - connection_close
+      - command_start
+      - command_finish
+      - file_upload
     filters:
       ignore_existing_logins: True
     actions:
