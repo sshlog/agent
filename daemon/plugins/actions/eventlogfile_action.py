@@ -3,6 +3,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 import json
 import os
+from comms.event_types import *
 
 class eventlogfile_action(ActionPlugin):
 
@@ -26,6 +27,8 @@ class eventlogfile_action(ActionPlugin):
         self.file_logger.setLevel(logging.DEBUG)
 
 
+    def _client_ip_str(self, event_data):
+        return f"{event_data['tcp_info']['client_ip']}:{event_data['tcp_info']['client_port']}"
 
     def shutdown_action(self):
         pass
