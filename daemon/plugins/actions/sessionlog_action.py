@@ -55,7 +55,7 @@ class sessionlog_action(ActionPlugin):
         # Ensure directory exists
         if not os.path.isdir(log_directory):
             # Make the directory readable only by owner (root)
-            os.makedirs(log_directory, 700)
+            os.makedirs(log_directory, mode=0o700)
 
     def shutdown_action(self):
         pass
