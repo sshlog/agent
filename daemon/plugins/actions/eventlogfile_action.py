@@ -20,7 +20,7 @@ class eventlogfile_action(ActionPlugin):
             os.makedirs(dirpath)
 
         self.file_logger = logging.getLogger(f'{self.name} logger')
-        handler = RotatingFileHandler(self.log_file_path, maxBytes=self.max_size_mb*1024, backupCount=self.number_of_log_files)
+        handler = RotatingFileHandler(self.log_file_path, maxBytes=self.max_size_mb*1024*1024, backupCount=self.number_of_log_files)
         formatter = logging.Formatter('%(asctime)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
         handler.setFormatter(formatter)
         self.file_logger.addHandler(handler)
