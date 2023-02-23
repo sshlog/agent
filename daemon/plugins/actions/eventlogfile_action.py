@@ -44,6 +44,7 @@ class eventlogfile_action(ActionPlugin):
 
     def execute(self, event_data):
 
+        self.logger.debug(f"{self.name} processing event {event_data['event_type']}")
         if self.output_json:
             self.file_logger.info(json.dumps(event_data))
         else:

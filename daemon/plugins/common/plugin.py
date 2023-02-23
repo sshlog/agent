@@ -30,7 +30,6 @@ class EventPlugin:
                 raise RuntimeError(f"Filter {filter} for event {self.name} is invalid.  The filter can only execute on "
                                    f"triggers {filter.triggers()}, and the event is only configured for triggers {self.triggers}")
 
-        print(f"SUBSCRIBING TO {self.triggers}")
         eventbus_sshtrace_subscribe(self._event_callback, self.triggers)
 
 
