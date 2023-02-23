@@ -18,8 +18,6 @@ class slack_action(ActionPlugin):
         return f"{event_data['tcp_info']['client_ip']}:{event_data['tcp_info']['client_port']}"
     def execute(self, event_data):
 
-        if event_data['event_type'] == 'SSHTRACE_EVENT_ESTABLISHED_CONNECTION':
-            pass
 
         message = ''
         session_id = f"{socket.gethostname()}:{event_data['ptm_pid']}"
