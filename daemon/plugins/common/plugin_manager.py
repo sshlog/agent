@@ -92,7 +92,7 @@ class PluginManager:
                 self.validation_errors.append(f"Missing plugin {plugin_name} referenced by action {self.actions[i]['action']}")
                 continue
 
-            print("CLASS OBJ: " + str(self.actions[i]))
+            logger.debug("CLASS OBJ: " + str(self.actions[i]))
             self.actions[i]['class_obj'] = self._plugins[plugin_name]['class_obj']
 
     def plugins_ok(self):
