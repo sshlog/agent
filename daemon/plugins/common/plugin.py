@@ -4,6 +4,11 @@ from events.event_bus import eventbus_sshtrace_subscribe, eventbus_sshtrace_unsu
 from comms.event_types import SSHTRACE_ALL_EVENTS
 import operator
 import re
+import concurrent.futures
+import os
+
+# Assume most action handling is IO-bound.  Default to use 16 threads per CPU core
+action_threadpool_executor = concurrent.futures.ThreadPoolExecutor(max_workers=os.cpu_count()*16)
 
 class EventPlugin:
     def __init__(self, name, triggers: list, filters: list, actions: list, **kwargs):
@@ -58,7 +63,8 @@ class EventPlugin:
         # Event has passed all filters, trigger actions
         for action in self.actions:
             try:
-                action.execute(event_data)
+                #action.execute(event_data)
+                action_threadpool_executor.submit(action.execute, event_data)
             except:
                 self.logger.exception(f"Error handling event for event plugin {self.name} action {action.name}")
 
