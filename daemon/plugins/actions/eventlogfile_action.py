@@ -6,8 +6,9 @@ import os
 
 class eventlogfile_action(ActionPlugin):
 
-    def init_action(self, log_file_path, max_size_mb=20, number_of_log_files=2):
+    def init_action(self, log_file_path, output_json=False, max_size_mb=20, number_of_log_files=2):
         self.log_file_path = log_file_path
+        self.output_json = output_json
         self.max_size_mb = max_size_mb
         self.number_of_log_files = number_of_log_files
         self.logger.info(f"Initialized action {self.name} with log file path {log_file_path}")
@@ -31,5 +32,29 @@ class eventlogfile_action(ActionPlugin):
 
     def execute(self, event_data):
 
-        self.file_logger.info(json.dumps(event_data))
+        if self.output_json:
+            self.file_logger.info(json.dumps(event_data))
+        else:
+            # Reformat each item into a log-friendly format
+
+            str_format = f"{event_data['event_type']}: ({event_data['ptm_pid']}) "
+
+            if event_data['event_type'] == SSHTRACE_EVENT_NEW_CONNECTION:
+                str_format += f" from ip {self._client_ip_str(event_data)}"
+            elif event_data['event_type'] == SSHTRACE_EVENT_ESTABLISHED_CONNECTION:
+                str_format += f"{event_data['username']} from ip {self._client_ip_str(event_data)}"
+            elif event_data['event_type'] == SSHTRACE_EVENT_CLOSE_CONNECTION:
+                str_format += f"{event_data['username']} from ip {self._client_ip_str(event_data)}"
+            elif event_data['event_type'] == SSHTRACE_EVENT_COMMAND_START:
+                str_format += f"{event_data['username']} executed {event_data['args']}"
+            elif event_data['event_type'] == SSHTRACE_EVENT_COMMAND_END:
+                str_format += f"{event_data['username']} execute complete (exit code: {event_data['exit_code']}) {event_data['args']}"
+            elif event_data['event_type'] == SSHTRACE_EVENT_FILE_UPLOAD:
+                str_format += f"{event_data['username']} uploaded file {event_data['target_path']}"
+            elif event_data['event_type'] == SSHTRACE_EVENT_TERMINAL_UPDATE:
+                str_format += f"{event_data['username']} terminal update ({event_data['data_len']} bytes)"
+
+            self.file_logger.info(str_format)
+
+
         
