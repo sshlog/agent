@@ -5,7 +5,7 @@ import time
 class ignore_existing_logins_filter(FilterPlugin):
 
     def triggers(self):
-        return [SSHTRACE_EVENT_ESTABLISHED_CONNECTION]
+        return [SSHTRACE_EVENT_NEW_CONNECTION, SSHTRACE_EVENT_ESTABLISHED_CONNECTION]
 
     def filter(self, event_data):
         # Filter connection established events that started more than 10 seconds ago
@@ -19,7 +19,7 @@ class ignore_existing_logins_filter(FilterPlugin):
         MAX_SECONDS_AGO = 10.0
         MILLISECONDS_IN_A_SEC = 1000.0
         start_time_ago = time.time() - (event_data['start_time'] / MILLISECONDS_IN_A_SEC)
-        if event_data['event_type'] == SSHTRACE_EVENT_ESTABLISHED_CONNECTION and start_time_ago > MAX_SECONDS_AGO:
+        if start_time_ago > MAX_SECONDS_AGO:
             return False
 
         return True
