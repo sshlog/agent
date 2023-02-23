@@ -17,7 +17,6 @@ class run_command_action(ActionPlugin):
         for arg in self.args:
             # Swap out any {{value}} items in the arguments list
             args_list.append(self._insert_event_data(event_data, arg))
-        args_list.extend(self.args)
 
         self.logger.info(f"{self.name} Command action triggered on {event_data['event_type']} executing {args_list}")
         exit_code = subprocess.call(args_list, timeout=self.timeout)
