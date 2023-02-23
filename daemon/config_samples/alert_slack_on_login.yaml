@@ -1,4 +1,4 @@
-
+events:
   - event: sudo_success
     triggers: [ 'connection_established']
     filters:

@@ -1,3 +1,4 @@
+events:
   - event: stream_terminal
     triggers: ['connection_established', 'connection_close', 'terminal_update']
     filters:
