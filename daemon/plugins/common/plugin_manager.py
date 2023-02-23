@@ -47,7 +47,9 @@ class PluginManager:
 
         yaml_dict = yaml.load(yaml_string, Loader=yaml.FullLoader)
         events = yaml_dict.get('events', [])
-        self.actions = yaml_dict.get('actions', [])
+        actions = yaml_dict.get('actions', [])
+        for action in actions:
+            self.actions.append(action)
 
 
         for event in events:
