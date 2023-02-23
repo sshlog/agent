@@ -29,7 +29,9 @@ override_dh_auto_install:
 	./daemon/build_binary.sh
 	mkdir -p debian/tmp/usr/bin/ && cp dist/* debian/tmp/usr/bin/
 	mkdir -p debian/tmp/var/log/sshbouncer && chmod 700 debian/tmp/var/log/sshbouncer
-	mkdir -p debian/tmp/etc/sshbouncer/{conf.d,plugins,samples}
+	mkdir -p debian/tmp/etc/sshbouncer/conf.d
+	mkdir -p debian/tmp/etc/sshbouncer/plugins
+	mkdir -p debian/tmp/etc/sshbouncer/samples
 	cp daemon/config_samples/* debian/tmp/etc/sshbouncer/samples/
 
 
