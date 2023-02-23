@@ -19,12 +19,12 @@ override_dh_auto_clean:
 override_dh_auto_test:
 override_dh_auto_build:
 override_dh_auto_install:
+	# If compiling for kernel version 5.8+, use -DUSE_RINGBUF=ON for more efficient data transfer
 	cmake \
 	  -DCMAKE_INSTALL_PREFIX=/usr \
 	  -DCMAKE_INSTALL_SYSCONFDIR=/etc \
 	  -DCMAKE_VERBOSE_MAKEFILE=OFF \
 	  -DCMAKE_COLOR_MAKEFILE=ON \
-#	  -DUSE_RINGBUF=ON \
 	  -Bbuild/ -S.
 	cd build; make -j8;	make install DESTDIR=../debian/tmp;
 	./daemon/build_binary.sh
