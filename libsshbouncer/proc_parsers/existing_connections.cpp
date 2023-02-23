@@ -57,14 +57,28 @@ ExistingConnections::ExistingConnections() {
       // to match what comes out of BPF
       // Take process start time (measured in "jiffies" since bootup, and convert to nanoseconds)
       // BPF is using nanos since boot
-      const int NANOS_IN_A_SEC = 1000000000;
+      const int64_t NANOS_IN_A_SEC = 1000000000;
       // https://unix.stackexchange.com/questions/62154/when-was-a-process-started
-      static int JIFFIES_PER_SECOND = sysconf(_SC_CLK_TCK);
+      static int64_t JIFFIES_PER_SECOND = sysconf(_SC_CLK_TCK);
 
-      int64_t proc_start_seconds_after_boot = process.get_stat().starttime / sysconf(_SC_CLK_TCK);
+      int64_t proc_start_seconds_after_boot = process.get_stat().starttime / JIFFIES_PER_SECOND;
       int64_t proc_start_nanos_after_boot = proc_start_seconds_after_boot * NANOS_IN_A_SEC;
 
       session.start_time = proc_start_nanos_after_boot;
+      // Requires an adjustment to convert from BOOTTIME to MONOTONIC time so that it matches what ebpf spits out
+      // ebpf spits out monotonic time (which does not include sleep/suspend time) whereas stat is using boottime
+
+      const int64_t MILLIS_IN_A_SEC = 1000;
+      const int64_t NANOS_IN_A_MILLIS = 1000000;
+      struct timespec ts_bt, ts_mt;
+      clock_gettime(CLOCK_MONOTONIC, &ts_mt);
+      clock_gettime(CLOCK_BOOTTIME, &ts_bt);
+
+      int64_t boottime_diff =
+          (ts_bt.tv_sec - ts_mt.tv_sec) * MILLIS_IN_A_SEC + (ts_bt.tv_nsec - ts_mt.tv_nsec) / NANOS_IN_A_MILLIS;
+      PLOG_DEBUG << "existing connection millisecond adjustment: " << boottime_diff;
+
+      session.start_time -= (boottime_diff * NANOS_IN_A_MILLIS);
 
       session.user_id = process.get_status().uid.real;
 
