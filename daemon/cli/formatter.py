@@ -27,7 +27,7 @@ def print_sessions(sessions_list: SessionListResponseDto, output_json=False):
         logger.info(sessions_list.to_json())
     else:
         out_table = PrettyTable()
-        out_table.set_style(SINGLE_BORDER)
+        out_table.set_style(PLAIN_COLUMNS)
         fields = ['User', 'Last Activity', 'Last Command', 'Session Start', 'Client IP', 'TTY']
 
         out_table.field_names = fields
