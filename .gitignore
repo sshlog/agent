@@ -5,3 +5,4 @@ unused/
 unused2/
 __pycache__/
 *.bak
+*.swp
