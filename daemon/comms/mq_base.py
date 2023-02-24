@@ -3,8 +3,8 @@ import pwd
 import grp
 import logging
 
-NAMED_PIPE_REQ_PATH = '/tmp/sshlogd_req.sock'
-NAMED_PIPE_RESP_PATH = '/tmp/sshlogd_resp.sock'
+NAMED_PIPE_REQ_PATH = '/var/run/sshlogd_req.sock'
+NAMED_PIPE_RESP_PATH = '/var/run/sshlogd_resp.sock'
 OS_GROUP_NAME = "sshlog"
 
 logger = logging.getLogger('sshlog_daemon')
