@@ -4,6 +4,7 @@ import time
 import logging
 from uuid import uuid4
 from .mq_base import NAMED_PIPE_REQ_PATH, NAMED_PIPE_RESP_PATH
+import os
 
 logger = logging.getLogger('sshlog_client')
 
@@ -14,10 +15,8 @@ class MQClient:
         self.initialized = False
 
         for pipepath in [NAMED_PIPE_REQ_PATH, NAMED_PIPE_RESP_PATH]:
-            try:
-                with open(pipepath, 'r') as inf:
-                    pass
-            except PermissionError:
+
+            if not os.path.exists(pipepath) or not os.access(pipepath, os.R_OK):
                 logger.warning(f"Permission denied accessing SSHLog daemon socket: unix://{pipepath}\n"
                                f"To use sshlog, you must either be a member of the 'sshlog' group, or the root user")
                 return
