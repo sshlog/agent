@@ -105,6 +105,8 @@ class PIDLockFile(object):
                 self.pidfile = pf
                 break
             except IOError as e:
+                if e.errno == errno.EACCES:
+                    raise
                 if e.errno == errno.ENOENT:
                     open_flags = (os.O_CREAT | os.O_EXCL | os.O_WRONLY)
                     open_mode = 0o644

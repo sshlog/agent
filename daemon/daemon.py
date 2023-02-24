@@ -65,9 +65,6 @@ def run_main():
     # add ch to logger
     logger.addHandler(handler)
 
-    if os.geteuid() != 0:
-        logger.warning("You must have root privileges to run the daemon.\nPlease try again as root or use 'sudo'.")
-        return
 
     # Create Tracker
     session_tracker = Tracker()
@@ -111,9 +108,16 @@ def run_main():
 
 
 if __name__ == "__main__":
+
+    if os.geteuid() != 0:
+        print("You must have root privileges to run the daemon.\nPlease try again as root or use 'sudo'.")
+        sys.exit(1)
+
     try:
         with PIDLockFile(PROC_LOCK_FILE, timeout=0.2):
             run_main()
     except (LockTimeout, AlreadyLocked):
         print(f"Error: sshlog daemon is already running.  To force process to run, delete {PROC_LOCK_FILE}")
+    except PermissionError:
+        print(f"Permission denied accessing file {PROC_LOCK_FILE}")
 
