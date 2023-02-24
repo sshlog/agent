@@ -6,7 +6,7 @@
 #include <time.h>
 #include <unordered_map>
 
-namespace sshbouncer {
+namespace sshlog {
 
 #define SSHD_DEFAULT_PORT 22
 #define SSHD_PROCESS_NAME "sshd"
@@ -187,4 +187,4 @@ static int discover_sshd_listen_port(pfs::procfs& pfs, pfs::task& sshd_process) 
   // If we couldn't determine it, return default port (22)
   return SSHD_DEFAULT_PORT;
 }
-} // namespace sshbouncer
+} // namespace sshlog

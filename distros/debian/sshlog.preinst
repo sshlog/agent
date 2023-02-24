@@ -3,7 +3,7 @@ set -e
 
 . /usr/share/debconf/confmodule
 
-USER=sshbouncer
-GROUP=sshbouncer
+USER=sshlog
+GROUP=sshlog
 getent group $GROUP >/dev/null || addgroup $GROUP >/dev/null
 getent passwd $USER >/dev/null || adduser --system --no-create-home --home /nonexistent $USER >/dev/null

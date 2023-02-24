@@ -80,6 +80,8 @@ static void serialize_connection(const struct connection* conn, yyjson_mut_doc* 
 
   yyjson_mut_obj_add_int(doc, root, "start_time", compute_boottime_diff_from_realtime(conn->start_time));
   yyjson_mut_obj_add_int(doc, root, "end_time", compute_boottime_diff_from_realtime(conn->end_time));
+  yyjson_mut_obj_add_int(doc, root, "start_timeraw", conn->start_time);
+  yyjson_mut_obj_add_int(doc, root, "end_timeraw", conn->end_time);
 
   struct in_addr ip_addr;
 

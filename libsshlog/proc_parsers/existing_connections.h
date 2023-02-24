@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-namespace sshbouncer {
+namespace sshlog {
 
 #define SSH_SESSION_UNKNOWN -1
 
@@ -35,5 +35,5 @@ private:
   std::vector<struct ssh_session> sessions;
 };
 
-} // namespace sshbouncer
+} // namespace sshlog
 #endif /* SSHBOUNCER_EXISTING_CONNECTIONS_H */

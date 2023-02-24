@@ -4,7 +4,7 @@ import os
 import logging
 from .plugin import EventPlugin, FilterPlugin, ActionPlugin
 
-logger = logging.getLogger('sshbouncer_daemon')
+logger = logging.getLogger('sshlog_daemon')
 
 
 def search_plugins(directories):

@@ -12,6 +12,6 @@ events:
     actions:
       - action: log_events
         plugin: eventlogfile_action
-        log_file_path: /var/log/sshbouncer/event.log
+        log_file_path: /var/log/sshlog/event.log
         max_size_mb: 10
         number_of_log_files: 5

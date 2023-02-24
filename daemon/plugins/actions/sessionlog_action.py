@@ -88,7 +88,7 @@ class sessionlog_action(ActionPlugin):
                 self.last_timestamp = time.time()
                 # Output date string always in UTC
                 date_string = datetime.datetime.utcnow().isoformat() + "Z"
-                content = f"\n[[ sshbouncer time: {date_string} ]]\n"
+                content = f"\n[[ sshlog time: {date_string} ]]\n"
                 self.write_data(output_path, content)
 
             filename = f"ssh_{event_data['ptm_pid']}.log"
@@ -115,10 +115,10 @@ class sessionlog_action(ActionPlugin):
 
         elif event_data['event_type'] == SSHTRACE_EVENT_CLOSE_CONNECTION:
             end_time_iso_8601 = datetime.datetime.utcfromtimestamp(event_data['end_time'] / 1000.0).isoformat() + 'Z'
-            content = f"\n[[ sshbouncer {event_data['event_type']} user: {event_data['username']} at {end_time_iso_8601} ]]\n"
+            content = f"\n[[ sshlog {event_data['event_type']} user: {event_data['username']} at {end_time_iso_8601} ]]\n"
             self.write_data(output_path, content)
 
         elif event_data['event_type'] == SSHTRACE_EVENT_ESTABLISHED_CONNECTION:
             start_time_iso_8601 = datetime.datetime.utcfromtimestamp(event_data['start_time'] / 1000.0).isoformat() + 'Z'
-            content = f"\n[[ sshbouncer {event_data['event_type']} user: {event_data['username']} at {start_time_iso_8601} ]]\n"
+            content = f"\n[[ sshlog {event_data['event_type']} user: {event_data['username']} at {start_time_iso_8601} ]]\n"
             self.write_data(output_path, content)

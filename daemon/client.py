@@ -14,7 +14,7 @@ import time
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="SSHBouncer Command Line Interface")
+    parser = argparse.ArgumentParser(description="SSHLog Command Line Interface")
 
     #subparsers = parser.add_subparsers(dest='command', help='Available Operations')
     subparsers = parser.add_subparsers(title='Commands', dest='command', help='Available Operations')
@@ -63,7 +63,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # create logger
-    logger = logging.getLogger('sshbouncer_client')
+    logger = logging.getLogger('sshlog_client')
     ch = logging.StreamHandler(stream=sys.stdout)
     if args.debug:
         logger.setLevel(logging.DEBUG)
@@ -86,7 +86,7 @@ if __name__ == "__main__":
 
         response = client.listen_for_response(correlation_id)
         if response is None:
-            logger.error("Unable to communicate with sshbouncerd")
+            logger.error("Unable to communicate with sshlogd")
             sys.exit(1)
 
         list_data = response.dto_payload  # type: SessionListResponseDto
@@ -128,7 +128,7 @@ if __name__ == "__main__":
 
         response = client.listen_for_response(correlation_id)
         if response is None:
-            logger.error("Unable to communicate with sshbouncerd")
+            logger.error("Unable to communicate with sshlogd")
             sys.exit(1)
         list_data = response.dto_payload  # type: SessionListResponseDto
         ptm_id = -1

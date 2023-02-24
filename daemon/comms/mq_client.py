@@ -5,7 +5,7 @@ import logging
 from uuid import uuid4
 from .mq_base import NAMED_PIPE_REQ_PATH, NAMED_PIPE_RESP_PATH
 
-logger = logging.getLogger('sshbouncer_client')
+logger = logging.getLogger('sshlog_client')
 
 class MQClient:
     def __init__(self):

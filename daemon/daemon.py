@@ -4,14 +4,14 @@ from logging.handlers import RotatingFileHandler
 from comms.mq_server import MQLocalServer
 import sys
 import os
-from sshbouncer import SSHBouncer
+from sshlog import SSHLog
 from trackers.tracker import Tracker
 from events.event_bus import eventbus_sshtrace_push
 from plugins.common.plugin_manager import PluginManager
 
 def run_main():
 
-    parser = argparse.ArgumentParser(description="SSHBouncer Daemon")
+    parser = argparse.ArgumentParser(description="SSHLog Daemon")
 
     parser.add_argument("-l", "--logfile", default=None, help='Path to log file')
 
@@ -33,7 +33,7 @@ def run_main():
     args = parser.parse_args()
 
     # create logger
-    logger = logging.getLogger('sshbouncer_daemon')
+    logger = logging.getLogger('sshlog_daemon')
 
     if args.logfile is not None:
         dirpath = os.path.dirname(args.logfile)
@@ -70,9 +70,9 @@ def run_main():
     # Create Tracker
     session_tracker = Tracker()
 
-    # Load config files from /etc/sshbouncer/sshbouncer.yaml as well as any files in /etc/sshbouncer/conf.d/
-    CONF_D_DIR = '/etc/sshbouncer/conf.d/'
-    conf_files = ['/etc/sshbouncer/sshbouncer.yaml']
+    # Load config files from /etc/sshlog/sshlog.yaml as well as any files in /etc/sshlog/conf.d/
+    CONF_D_DIR = '/etc/sshlog/conf.d/'
+    conf_files = ['/etc/sshlog/sshlog.yaml']
     if os.path.isdir(CONF_D_DIR):
         for conf_file in os.listdir(CONF_D_DIR):
             if conf_file.endswith('.yaml') or conf_file.endswith('.yml'):
@@ -81,7 +81,7 @@ def run_main():
     # Initialize the plugins
     plugin_manager = PluginManager(conf_files,
                                    session_tracker,
-                                   user_plugin_dirs=['/etc/sshbouncer/plugins/'])
+                                   user_plugin_dirs=['/etc/sshlog/plugins/'])
     if not plugin_manager.plugins_ok():
         for validation_error in plugin_manager.validation_errors:
             logger.warning(validation_error)
@@ -94,7 +94,7 @@ def run_main():
     server = MQLocalServer(session_tracker)
     server.start()
 
-    with SSHBouncer(loglevel=0) as sshb:
+    with SSHLog(loglevel=0) as sshb:
 
         try:
             while sshb.is_ok():

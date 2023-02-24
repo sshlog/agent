@@ -15,7 +15,7 @@
 #include <sys/resource.h>
 #include <time.h>
 
-namespace sshbouncer {
+namespace sshlog {
 
 const int AGGREGATE_TERMINAL_MILLISECONDS_DELAY = 20;
 
@@ -318,4 +318,4 @@ static struct connection create_connection(struct ssh_session existing_session) 
   return c;
 }
 
-} // namespace sshbouncer
+} // namespace sshlog

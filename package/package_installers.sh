@@ -4,8 +4,8 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 docker build -t openkilt/builder:ubuntu2004 ${SCRIPT_DIR}
 
-VOL_SHARE_DIR=/tmp/sshbouncer-pack
-TAR_FILE_NAME=sshbouncer
+VOL_SHARE_DIR=/tmp/sshlog-pack
+TAR_FILE_NAME=sshlog
 
 rm -Rf $VOL_SHARE_DIR
 mkdir -p $VOL_SHARE_DIR
@@ -13,10 +13,10 @@ mkdir -p $VOL_SHARE_DIR
 # Copy the signing key
 cp ${SCRIPT_DIR}/signing_keys/private.pgp ${VOL_SHARE_DIR}
 
-git-archive-all --force-submodules --prefix=sshbouncer/ ${VOL_SHARE_DIR}/sshbouncer.tar.gz
+git-archive-all --force-submodules --prefix=sshlog/ ${VOL_SHARE_DIR}/sshlog.tar.gz
 cd $VOL_SHARE_DIR
-tar xvfz sshbouncer.tar.gz
-ln -s ${VOL_SHARE_DIR}/sshbouncer/distros/debian/ ${VOL_SHARE_DIR}/sshbouncer/debian
+tar xvfz sshlog.tar.gz
+ln -s ${VOL_SHARE_DIR}/sshlog/distros/debian/ ${VOL_SHARE_DIR}/sshlog/debian
 
 
 HOST_USER_ID=$(id -u)
@@ -27,14 +27,14 @@ echo """#!/bin/bash
 
 gpg --import ${VOL_SHARE_DIR}/private.pgp
 
-cd ${VOL_SHARE_DIR}/sshbouncer/
+cd ${VOL_SHARE_DIR}/sshlog/
 debuild -b
 chown ${HOST_USER_ID}:${HOST_GROUP_ID} ${VOL_SHARE_DIR}/* -R
-""" > ${VOL_SHARE_DIR}/sshbouncer/pack.sh
-chmod +x ${VOL_SHARE_DIR}/sshbouncer/pack.sh
+""" > ${VOL_SHARE_DIR}/sshlog/pack.sh
+chmod +x ${VOL_SHARE_DIR}/sshlog/pack.sh
 
 
-docker run --rm -v ${VOL_SHARE_DIR}:${VOL_SHARE_DIR} -it openkilt/builder:ubuntu2004 ${VOL_SHARE_DIR}/sshbouncer/pack.sh
+docker run --rm -v ${VOL_SHARE_DIR}:${VOL_SHARE_DIR} -it openkilt/builder:ubuntu2004 ${VOL_SHARE_DIR}/sshlog/pack.sh
 
 rmdir -Rf ${SCRIPT_DIR}/dist 2>/dev/null
 mkdir -p ${SCRIPT_DIR}/dist 2>/dev/null

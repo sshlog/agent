@@ -9,7 +9,7 @@ import datetime
 import timeago
 import timeago.locales.en # Import this explicitly so that pyinstaller finds it
 
-logger = logging.getLogger('sshbouncer_client')
+logger = logging.getLogger('sshlog_client')
 
 def _convert_epoch_ms_to_time(epoch_ms):
     return datetime.datetime.fromtimestamp(epoch_ms/1000).strftime('%Y-%m-%d %H:%M:%S')

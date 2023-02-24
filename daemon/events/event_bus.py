@@ -4,7 +4,7 @@ import concurrent.futures
 import os
 import logging
 
-logger = logging.getLogger('sshbouncer_daemon')
+logger = logging.getLogger('sshlog_daemon')
 
 
 # Assume most event handling is IO-bound.  Default to use 4 threads per CPU core

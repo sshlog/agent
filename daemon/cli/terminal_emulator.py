@@ -5,7 +5,7 @@ import threading
 import select
 import logging
 
-logger = logging.getLogger('sshbouncer_client')
+logger = logging.getLogger('sshlog_client')
 
 TERM_QUIT_KEY = b'\x11'  # CTRL+Q
 

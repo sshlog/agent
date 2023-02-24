@@ -1,0 +1,7 @@
+usr/bin/sshlogd
+usr/bin/sshlog
+usr/lib/libsshlog.so.1
+etc/sshlog/conf.d
+etc/sshlog/plugins
+etc/sshlog/samples/*
+var/log/sshlog

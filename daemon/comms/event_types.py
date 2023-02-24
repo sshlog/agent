@@ -1,5 +1,5 @@
 
-# These constants are defined in libsshbouncer sshtrace_events.h and mapped to strings in event_serializer.cpp
+# These constants are defined in libsshlog sshtrace_events.h and mapped to strings in event_serializer.cpp
 SSHTRACE_EVENT_NEW_CONNECTION = 'connection_new'
 SSHTRACE_EVENT_ESTABLISHED_CONNECTION = 'connection_established'
 SSHTRACE_EVENT_CLOSE_CONNECTION = 'connection_close'

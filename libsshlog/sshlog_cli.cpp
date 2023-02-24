@@ -1,5 +1,5 @@
 
-#include "sshbouncer.h"
+#include "sshlog.h"
 #include "tclap/CmdLine.h"
 #include <iostream>
 #include <signal.h>
@@ -12,7 +12,7 @@ int main(int argc, const char** argv) {
 
   bool debug_mode = false;
 
-  TCLAP::CmdLine cmd("SSHBouncer Command Line Utility", ' ', "1.0.0");
+  TCLAP::CmdLine cmd("SSHLog Command Line Utility", ' ', "1.0.0");
 
   TCLAP::SwitchArg debugSwitch("", "debug", "Enable debug output.  Default=off", cmd, false);
 
@@ -32,20 +32,20 @@ int main(int argc, const char** argv) {
   signal(SIGINT, sig_handler);
   signal(SIGTERM, sig_handler);
 
-  sshbouncer_options opts = sshbouncer_get_default_options();
+  sshlog_options opts = sshlog_get_default_options();
   if (debug_mode)
     opts.log_level = SSHBOUNCER_LOG_LEVEL::LOG_DEBUG;
   else
     opts.log_level = SSHBOUNCER_LOG_LEVEL::LOG_WARNING;
 
-  SSHBOUNCER* sshb_inst = sshbouncer_init(&opts);
-  while (!exiting && sshbouncer_is_ok(sshb_inst) == 0) {
-    char* json_data = sshbouncer_event_poll(sshb_inst, 15);
+  SSHBOUNCER* sshb_inst = sshlog_init(&opts);
+  while (!exiting && sshlog_is_ok(sshb_inst) == 0) {
+    char* json_data = sshlog_event_poll(sshb_inst, 15);
     if (json_data != nullptr) {
       std::cout << json_data << std::endl;
-      sshbouncer_event_release(json_data);
+      sshlog_event_release(json_data);
     }
   }
 
-  sshbouncer_release(sshb_inst);
+  sshlog_release(sshb_inst);
 }

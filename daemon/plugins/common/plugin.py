@@ -16,7 +16,7 @@ class EventPlugin:
         self.triggers = triggers
         self.filters = filters
         self.actions = actions
-        self.logger = logging.getLogger('sshbouncer_daemon')
+        self.logger = logging.getLogger('sshlog_daemon')
 
         for trigger in self.triggers:
             if trigger not in SSHTRACE_ALL_EVENTS:
@@ -71,7 +71,7 @@ class EventPlugin:
 
 class FilterPlugin:
     def __init__(self, filter_arg, session_tracker: Tracker, **kwargs):
-        self.logger = logging.getLogger('sshbouncer_daemon')
+        self.logger = logging.getLogger('sshlog_daemon')
         self.filter_arg = filter_arg
         self.session_tracker = session_tracker
 
@@ -146,7 +146,7 @@ class ActionPlugin:
     def __init__(self, name, session_tracker: Tracker, **kwargs):
         self.name = name
         self.session_tracker = session_tracker
-        self.logger = logging.getLogger('sshbouncer_daemon')
+        self.logger = logging.getLogger('sshlog_daemon')
         self.init_action(**kwargs)
 
     def _insert_event_data(self, event_data, template):

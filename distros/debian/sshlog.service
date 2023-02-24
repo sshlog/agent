@@ -1,0 +1,10 @@
+[Unit]
+Description=SSHLog Agent Service
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/sshlogd --logfile /var/log/sshlog/sshlogd.log
+
+[Install]
+WantedBy=multi-user.target

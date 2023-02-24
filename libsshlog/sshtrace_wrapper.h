@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <thread>
 
-namespace sshbouncer {
+namespace sshlog {
 
 // This wrapper initializes the BPF interface
 // and polls it in a bg thread.  All data is serialized to JSON and
@@ -44,5 +44,5 @@ class SSHTraceWrapper {
   std::unique_ptr<std::thread> bpf_poll_thread;
 };
 
-} // namespace sshbouncer
+} // namespace sshlog
 #endif /* SSHBOUNCER_SSHTRACE_WRAPPER_H */

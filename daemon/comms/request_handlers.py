@@ -7,7 +7,7 @@ from comms.event_types import *
 import time
 import logging
 
-logger = logging.getLogger('sshbouncer_daemon')
+logger = logging.getLogger('sshlog_daemon')
 
 class RequestHandler(threading.Thread):
     '''

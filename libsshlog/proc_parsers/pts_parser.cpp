@@ -13,7 +13,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-namespace sshbouncer {
+namespace sshlog {
 
 PtsParser::PtsParser(int pts_pid) {
   this->pts_fd_1 = PTS_UNKNOWN;
@@ -146,4 +146,4 @@ void PtsParser::populate_connection(struct connection* conn) {
   strcpy(conn->username, getUser(conn->user_id).c_str());
   conn->tty_id = this->tty_id;
 }
-} // namespace sshbouncer
+} // namespace sshlog

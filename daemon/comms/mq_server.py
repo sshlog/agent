@@ -13,7 +13,7 @@ import termios
 from signal import SIGWINCH
 from .mq_base import _bind_zmq_socket, NAMED_PIPE_REQ_PATH, NAMED_PIPE_RESP_PATH
 
-logger = logging.getLogger('sshbouncer_daemon')
+logger = logging.getLogger('sshlog_daemon')
 
 class MQRequestThread(threading.Thread):
     def __init__(self, message_callback, zmq_socket, is_alive_function,
@@ -76,7 +76,7 @@ class MQResponseThread(threading.Thread):
 
 class MQLocalServer(threading.Thread):
     '''
-    Acts as a server to receive requests from client process (sshbouncer)
+    Acts as a server to receive requests from client process (sshlog)
     responds with data that client can display to CLI
     '''
     def __init__(self, session_tracker: Tracker):

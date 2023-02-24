@@ -13,7 +13,7 @@
 // This class collapses this data into fewer events by buffering terminal data received within
 // milliseconds of each other.  The text is concatenated and the data length is extended
 
-namespace sshbouncer {
+namespace sshlog {
 
 struct aggregated_terminal_event {
   int64_t ptm_pid;
@@ -69,6 +69,6 @@ class TerminalAggregator {
   std::mutex map_mutex_;
 };
 
-} // namespace sshbouncer
+} // namespace sshlog
 
 #endif // SSHBOUNCER_TERMINAL_AGGREGATOR_H

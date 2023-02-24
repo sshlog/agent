@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <vector>
 
-namespace sshbouncer {
+namespace sshlog {
 
 #define PTS_UNKNOWN -1
 
@@ -30,5 +30,5 @@ class PtsParser {
   void find_user_id(int32_t pid);
 };
 
-} // namespace sshbouncer
+} // namespace sshlog
 #endif /* SSHBOUNCER_PTS_PARSER_H */

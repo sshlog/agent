@@ -6,5 +6,5 @@ events:
     actions:
       - action: log_all_sessions
         plugin: sessionlog_action
-        log_directory: '/var/log/sshbouncer/sessions/'
+        log_directory: '/var/log/sshlog/sessions/'
         timestamp_frequency_seconds: 60

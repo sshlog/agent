@@ -24,7 +24,7 @@ endif()
 
 # Build libbpf via Makefile
 set (CMAKE_CXX_STANDARD 17)
-#set_property(TARGET sshbouncer PROPERTY CXX_STANDARD 11)
+#set_property(TARGET sshlog PROPERTY CXX_STANDARD 11)
 # Build vendored libbpf
 include(ExternalProject)
 ExternalProject_Add(libbpf
@@ -82,18 +82,18 @@ endif()
 bpf_object(sshtrace bpf/sshtrace.bpf.c)
 add_dependencies(sshtrace_skel libbpf-build)
 
-set(sshbouncer_SRC
-  sshbouncer.cpp
+set(sshlog_SRC
+  sshlog.cpp
   sshtrace_wrapper.cpp
   event_serializer.cpp
   proc_parsers/pts_parser.cpp
   proc_parsers/existing_connections.cpp
 )
-add_library(sshbouncer SHARED
-  ${sshbouncer_SRC}
+add_library(sshlog SHARED
+  ${sshlog_SRC}
 )
 
-target_link_libraries(sshbouncer 
+target_link_libraries(sshlog 
   sshtrace_skel 
   ${LIBBPF_LIBRARIES}
   yyjson
@@ -103,21 +103,21 @@ target_link_libraries(sshbouncer
   elf
   z
 )
-target_include_directories(sshbouncer PRIVATE "${pfs_SOURCE_DIR}/include")
+target_include_directories(sshlog PRIVATE "${pfs_SOURCE_DIR}/include")
 
 
-add_executable(sshbouncer_cli 
-  sshbouncer_cli.cpp
+add_executable(sshlog_cli 
+  sshlog_cli.cpp
 )
-target_link_libraries(sshbouncer_cli
-  sshbouncer
+target_link_libraries(sshlog_cli
+  sshlog
   tclap
 )
 # Add include directories for PFS library
 
 if(USE_RINGBUF)
-  target_compile_definitions(sshbouncer PUBLIC SSHTRACE_USE_RINGBUF)
+  target_compile_definitions(sshlog PUBLIC SSHTRACE_USE_RINGBUF)
 endif()
 
-set_target_properties(sshbouncer PROPERTIES SOVERSION 1)
-install (TARGETS sshbouncer   DESTINATION    ${CMAKE_INSTALL_PREFIX}/lib)
+set_target_properties(sshlog PROPERTIES SOVERSION 1)
+install (TARGETS sshlog   DESTINATION    ${CMAKE_INSTALL_PREFIX}/lib)

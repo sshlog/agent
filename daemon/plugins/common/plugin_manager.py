@@ -5,7 +5,7 @@ from .plugin_factory import search_plugins
 from .plugin import EventPlugin
 from comms.event_types import SSHTRACE_ALL_EVENTS
 
-logger = logging.getLogger('sshbouncer_daemon')
+logger = logging.getLogger('sshlog_daemon')
 
 class PluginManager:
     def __init__(self, yaml_configs, session_tracker, user_plugin_dirs=[]):
