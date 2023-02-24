@@ -80,6 +80,8 @@ if __name__ == "__main__":
     logger.addHandler(ch)
 
     client = MQClient()
+    if not client.initialized:
+        sys.exit(1)
 
     if args.command == 'sessions':
         correlation_id = client.make_request(SessionListRequestDto())

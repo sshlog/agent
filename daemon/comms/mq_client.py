@@ -11,6 +11,16 @@ class MQClient:
     def __init__(self):
         # Generate a pseudo-random "client id" for each MQClient
         self.client_id = uuid4().__str__()
+        self.initialized = False
+
+        for pipepath in [NAMED_PIPE_REQ_PATH, NAMED_PIPE_RESP_PATH]:
+            try:
+                with open(pipepath, 'r') as inf:
+                    pass
+            except PermissionError:
+                logger.warning(f"Permission denied accessing SSHLog daemon socket: unix://{pipepath}\n"
+                               f"To use sshlog, you must either be a member of the 'sshlog' group, or the root user")
+                return
 
         self.context = zmq.Context()
         self.req_socket = self.context.socket(zmq.PUSH)
@@ -23,6 +33,8 @@ class MQClient:
         self.resp_socket.setsockopt(zmq.RCVTIMEO, 100)
         #self.resp_socket.setsockopt(zmq.SUBSCRIBE, self.client_id.encode('utf-8'))
         self.resp_socket.subscribe(self.client_id)
+
+        self.initialized = True
 
     def make_request(self, dto_payload, correlation_id=None):
         msg = RequestMessage(dto_payload, self.client_id, correlation_id)
