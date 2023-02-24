@@ -8,6 +8,8 @@ from sshlog import SSHLog
 from trackers.tracker import Tracker
 from events.event_bus import eventbus_sshtrace_push
 from plugins.common.plugin_manager import PluginManager
+from comms.mq_base import PROC_LOCK_FILE
+from comms.pidlockfile import PIDLockFile, LockTimeout, AlreadyLocked
 
 def run_main():
 
@@ -109,5 +111,9 @@ def run_main():
 
 
 if __name__ == "__main__":
+    try:
+        with PIDLockFile(PROC_LOCK_FILE, timeout=0.2):
+            run_main()
+    except (LockTimeout, AlreadyLocked):
+        print(f"Error: sshlog daemon is already running.  To force process to run, delete {PROC_LOCK_FILE}")
 
-    run_main()
