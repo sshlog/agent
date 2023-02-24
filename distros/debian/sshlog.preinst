@@ -1,7 +1,5 @@
 #!/bin/bash
 set -e
 
-. /usr/share/debconf/confmodule
-
 GROUP=sshlog
 getent group $GROUP >/dev/null || addgroup $GROUP >/dev/null
