@@ -45,17 +45,17 @@ def run_main():
         # add a rotating handler
         handler = RotatingFileHandler(args.logfile, maxBytes=5000000,
                                       backupCount=5)
+        formatter = logging.Formatter('%(asctime)s - %(filename)s:%(lineno)d - %(levelname)s - %(message)s')
     else:
         handler = logging.StreamHandler(stream=sys.stdout)
+        formatter = logging.Formatter('%(message)s')
 
     if args.debug:
         logger.setLevel(logging.DEBUG)
         handler.setLevel(logging.DEBUG)
-        formatter = logging.Formatter('%(asctime)s - %(filename)s:%(lineno)d - %(levelname)s - %(message)s')
     else:
         logger.setLevel(logging.INFO)
         handler.setLevel(logging.INFO)
-        formatter = logging.Formatter('%(message)s')
 
 
     handler.setFormatter(formatter)
