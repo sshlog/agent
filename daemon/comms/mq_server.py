@@ -28,7 +28,7 @@ class MQRequestHandlerThread(threading.Thread):
         self.response_queue = response_queue
         self.zmq_context = zmq_context
         self.zmq_socket = self.zmq_context.socket(zmq.DEALER)
-        self.zmq_socket.setsockopt(zmq.RCVTIMEO, 100)
+        self.zmq_socket.setsockopt(zmq.RCVTIMEO, 10)
         self.zmq_socket.connect(BACKEND_PROC_ID)
         self.is_alive_function = is_alive_function
 
