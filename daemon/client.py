@@ -142,6 +142,15 @@ if __name__ == "__main__":
             logger.error(f"Cannot find session with TTY ID {args.tty_id}")
             sys.exit(1)
 
+        # Sanity check, make sure they're not trying to attach to their own ssh session
+        # This doesn't currently handle cases where user has sudo'd or is ssh'd inside and ssh session
+        TTY_SYMLINK = '/proc/self/fd/0'
+        if os.path.exists(TTY_SYMLINK):
+            tty_id = os.path.basename(os.path.realpath(TTY_SYMLINK))
+            if str(args.tty_id) == tty_id:
+                logger.error(f"You are attempting to attach to your own SSH session.  Exiting.")
+                sys.exit(1)
+
         request_dto = EventWatchRequestDto(
             event_types=[SSHTRACE_EVENT_CLOSE_CONNECTION, SSHTRACE_EVENT_TERMINAL_UPDATE],
             ptm_pid=ptm_id
