@@ -17,6 +17,7 @@ class Tracker:
     def connection_open(self, event_data):
         pid_key = event_data['ptm_pid']
         self.connections[pid_key] = event_data
+        self.connections[pid_key]['last_activity_time'] = round(time.time() * 1000.0)
 
     def connection_established(self, event_data):
         pid_key = event_data['ptm_pid']
