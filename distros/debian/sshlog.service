@@ -2,9 +2,15 @@
 Description=SSHLog Agent Service
 After=network-online.target
 
+StartLimitIntervalSec=500
+StartLimitBurst=5
+
 [Service]
 Type=simple
 ExecStart=/usr/bin/sshlogd --logfile /var/log/sshlog/sshlogd.log
+
+Restart=on-failure
+RestartSec=5s
 
 [Install]
 WantedBy=multi-user.target
