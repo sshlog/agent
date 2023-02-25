@@ -22,16 +22,23 @@ class MQClient:
                 return
 
         self.context = zmq.Context()
-        self.req_socket = self.context.socket(zmq.PUSH)
-        self.req_socket.connect(f"ipc://{NAMED_PIPE_REQ_PATH}")
 
         self.resp_socket = self.context.socket(zmq.SUB)
         self.resp_socket.connect(f"ipc://{NAMED_PIPE_RESP_PATH}")
+        # This is a hack to deal with the ZeroMQ "Slow Joiner" problem
+        # https://zguide.zeromq.org/docs/chapter1/
+        # Without a delay, the publisher will not yet know about the subscriber when pushing its message
+        # so it will drop it.  Doing this in a more robust way seems very complicated
+        time.sleep(0.2)
 
         # Set the timeout for receiving messages to 100 milliseconds
         self.resp_socket.setsockopt(zmq.RCVTIMEO, 100)
+        self.resp_socket.setsockopt(zmq.LINGER, 0)
         #self.resp_socket.setsockopt(zmq.SUBSCRIBE, self.client_id.encode('utf-8'))
         self.resp_socket.subscribe(self.client_id)
+
+        self.req_socket = self.context.socket(zmq.PUSH)
+        self.req_socket.connect(f"ipc://{NAMED_PIPE_REQ_PATH}")
 
         self.initialized = True
 

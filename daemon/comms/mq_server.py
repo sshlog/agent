@@ -97,6 +97,8 @@ class MQLocalServer(threading.Thread):
         self.req_socket.setsockopt(zmq.RCVTIMEO, 100)
 
         self.resp_socket = self.context.socket(zmq.PUB)
+        # Limit queue per peer to 1000 messages each.  Keep memory from growing infinitely if receiver is in weird state
+        self.resp_socket.setsocketopt(zmq.ZMQ_HWM, 1000)
         _bind_zmq_socket(self.resp_socket, NAMED_PIPE_RESP_PATH)
 
         # Kick off the threads
