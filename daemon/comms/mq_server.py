@@ -11,19 +11,25 @@ import os
 import fcntl
 import termios
 from signal import SIGWINCH
-from .mq_base import _bind_zmq_socket, NAMED_PIPE_REQ_PATH, NAMED_PIPE_RESP_PATH
+from .mq_base import _bind_zmq_socket, NAMED_PIPE_REQ_PATH
 
 logger = logging.getLogger('sshlog_daemon')
 
-class MQRequestThread(threading.Thread):
-    def __init__(self, message_callback, zmq_socket, is_alive_function,
+BACKEND_PROC_ID = 'inproc://backend'
+CONTROL_PROC_ID = 'inproc://proxy_control'
+class MQRequestHandlerThread(threading.Thread):
+    def __init__(self, message_callback, response_queue, zmq_context, is_alive_function,
                  group=None, target=None, name=None, args=(), kwargs=None):
 
-        super(MQRequestThread,self).__init__(group=group, target=target,
+        super(MQRequestHandlerThread,self).__init__(group=group, target=target,
                               name=name)
 
         self.message_callback = message_callback
-        self.zmq_socket = zmq_socket
+        self.response_queue = response_queue
+        self.zmq_context = zmq_context
+        self.zmq_socket = self.zmq_context.socket(zmq.DEALER)
+        self.zmq_socket.setsockopt(zmq.RCVTIMEO, 100)
+        self.zmq_socket.connect(BACKEND_PROC_ID)
         self.is_alive_function = is_alive_function
 
 
@@ -34,7 +40,8 @@ class MQRequestThread(threading.Thread):
 
                 # Check for request messages
                 try:
-                    message = self.zmq_socket.recv()
+
+                    ident, message = self.zmq_socket.recv_multipart()
                     request_message = deserialize_message(message.decode('utf-8'))
 
                     if request_message is not None:
@@ -45,41 +52,30 @@ class MQRequestThread(threading.Thread):
                     # Timeout expired
                     pass
 
-            except:
-                logger.exception("Error encountered processing request.  Continuing.")
-
-
-class MQResponseThread(threading.Thread):
-    def __init__(self, response_queue, zmq_socket, is_alive_function,
-                 group=None, target=None, name=None, args=(), kwargs=None):
-        super(MQResponseThread,self).__init__(group=group, target=target,
-                              name=name)
-        self.response_queue = response_queue
-        self.zmq_socket = zmq_socket
-        self.is_alive_function = is_alive_function
-
-
-    def run(self):
-
-        while self.is_alive_function():
-            try:
-
-                # Send any response messages that have arrived on the queue
+                # Push all ready responses on the queue before checking for more requests
                 try:
-                    response_message = self.response_queue.get(timeout=0.1)  # type: ResponseMessage
-                    self.zmq_socket.send_string(f"{response_message.client_id} {response_message.to_json()}")
-                    self.response_queue.task_done()
+                    while self.is_alive_function() and not self.response_queue.empty():
+                        response_message = self.response_queue.get(timeout=0.1)  # type: ResponseMessage
+                        self.zmq_socket.send_multipart([response_message.client_id.encode('ascii'), response_message.to_json().encode('utf-8')])
+                        self.response_queue.task_done()
                 except queue.Empty:
                     pass
+
             except:
                 logger.exception("Error encountered processing request.  Continuing.")
+
+
 
 class MQLocalServer(threading.Thread):
     '''
     Acts as a server to receive requests from client process (sshlog)
     responds with data that client can display to CLI
     '''
-    def __init__(self, session_tracker: Tracker):
+    def __init__(self, session_tracker: Tracker,
+                 group=None, target=None, name=None, args=(), kwargs=None):
+
+        super(MQLocalServer,self).__init__(group=group, target=target,
+                              name=name)
 
         self.session_tracker = session_tracker
         self.response_queue = queue.Queue()
@@ -87,27 +83,40 @@ class MQLocalServer(threading.Thread):
         self._stay_alive = True
 
 
-    def start(self):
 
-        # Setup the sockets
+    def run(self):
+
+        # Setup the sockets, one server, multiple clients
+        # Pattern documented here: https://zguide.zeromq.org/docs/chapter3/#The-Asynchronous-Client-Server-Pattern
         self.context = zmq.Context()
 
-        self.req_socket = self.context.socket(zmq.PULL)
-        _bind_zmq_socket(self.req_socket, NAMED_PIPE_REQ_PATH)
-        self.req_socket.setsockopt(zmq.RCVTIMEO, 100)
+        self.zmq_router = self.context.socket(zmq.ROUTER)
+        _bind_zmq_socket(self.zmq_router, NAMED_PIPE_REQ_PATH)
 
-        self.resp_socket = self.context.socket(zmq.PUB)
-        # Limit queue per peer to 1000 messages each.  Keep memory from growing infinitely if receiver is in weird state
-        self.resp_socket.setsocketopt(zmq.ZMQ_HWM, 1000)
-        _bind_zmq_socket(self.resp_socket, NAMED_PIPE_RESP_PATH)
+        self.zmq_dealer = self.context.socket(zmq.DEALER)
+        self.zmq_dealer.setsockopt(zmq.RCVTIMEO, 100)
+        self.zmq_dealer.bind(BACKEND_PROC_ID)
+
+        # The ZMQ Proxy cannot be stopped without a special Control socket
+        # sending a "TERMINATE" signal on the socket allows the proxy to exit gracefully
+        self.zmq_proxy_control_pull = self.context.socket(zmq.PULL)
+        self.zmq_proxy_control_pull.bind(CONTROL_PROC_ID)
+
+        self.zmq_proxy_control_push = self.context.socket(zmq.PUSH)
+        self.zmq_proxy_control_push.connect(CONTROL_PROC_ID)
 
         # Kick off the threads
-        self.request_thread = MQRequestThread(self._launch_task, self.req_socket, self.stay_alive)
-        self.request_thread.start()
-        self.response_thread = MQResponseThread(self.response_queue, self.resp_socket, self.stay_alive)
-        self.response_thread.start()
+        self.request_handler_thread = MQRequestHandlerThread(self._launch_task, self.response_queue, self.context, self.stay_alive)
+        self.request_handler_thread.start()
+
+        # Thread hangs here until terminate
+        zmq.proxy_steerable(self.zmq_router, self.zmq_dealer, None, self.zmq_proxy_control_pull)
 
 
+        self.zmq_router.close()
+        self.zmq_dealer.close()
+        self.zmq_proxy_control_push.close()
+        self.zmq_proxy_control_pull.close()
 
     def _launch_task(self, request_message: RequestMessage):
         if request_message.dto_payload.payload_type == SESSION_LIST_REQUEST:
@@ -155,47 +164,10 @@ class MQLocalServer(threading.Thread):
 
     def shutdown(self):
         self._stay_alive = False
-        self.request_thread.join(timeout=1.0)
-        self.response_thread.join(timeout=1.0)
+        self.request_handler_thread.join(timeout=1.0)
+        self.zmq_proxy_control_push.send_string('TERMINATE')
 
     def stay_alive(self):
         return self._stay_alive
 
 
-    # def run(self):
-    #     context = zmq.Context()
-    #
-    #     req_socket = context.socket(zmq.PULL)
-    #     _bind_zmq_socket(req_socket, NAMED_PIPE_REQ_PATH)
-    #     req_socket.setsockopt(zmq.RCVTIMEO, 100)
-    #
-    #     resp_socket = context.socket(zmq.PUB)
-    #     _bind_zmq_socket(resp_socket, NAMED_PIPE_RESP_PATH)
-    #
-    #     #socket.setsockopt(zmq.USE_FD, 0)
-    #
-    #     while self.stay_alive():
-    #         try:
-    #
-    #             # Check for request messages
-    #             try:
-    #                 message = req_socket.recv()
-    #                 request_message = deserialize_message(message.decode('utf-8'))
-    #
-    #                 if request_message is not None:
-    #                     logger.debug("Request message: " + str(request_message))
-    #                     self._launch_task(request_message)
-    #             except zmq.error.Again:
-    #                 # Timeout expired
-    #                 pass
-    #
-    #             # Send any response messages that have arrived on the queue
-    #             try:
-    #                 response_message = self.response_queue.get(timeout=0.1)  # type: ResponseMessage
-    #                 print(f"SENDING RESPONSE {response_message}")
-    #                 resp_socket.send_string(f"{response_message.client_id} {response_message.to_json()}")
-    #                 self.response_queue.task_done()
-    #             except queue.Empty:
-    #                 pass
-    #         except:
-    #             logger.exception("Error encountered processing request.  Continuing.")

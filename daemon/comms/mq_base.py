@@ -3,8 +3,7 @@ import pwd
 import grp
 import logging
 
-NAMED_PIPE_REQ_PATH = '/var/run/sshlogd_req.sock'
-NAMED_PIPE_RESP_PATH = '/var/run/sshlogd_resp.sock'
+NAMED_PIPE_REQ_PATH = '/var/run/sshlogd.sock'
 PROC_LOCK_FILE = '/var/run/sshlogd.lock'
 OS_GROUP_NAME = "sshlog"
 
