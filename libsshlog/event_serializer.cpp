@@ -91,9 +91,6 @@ static void serialize_connection(const struct connection_event* event, const str
     yyjson_mut_obj_add_int(doc, root, "end_time", compute_boottime_diff_from_realtime(conn->end_time));
   }
 
-  yyjson_mut_obj_add_int(doc, root, "start_timeraw", conn->start_time);
-  yyjson_mut_obj_add_int(doc, root, "end_timeraw", conn->end_time);
-
   struct in_addr ip_addr;
 
   yyjson_mut_val* tcp_info_val = yyjson_mut_obj(doc);
