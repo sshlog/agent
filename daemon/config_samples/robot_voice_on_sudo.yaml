@@ -1,4 +1,6 @@
-# Requires that the "espeak" package be installed on your computer
+# Description:
+# Activates "espeak" to say words when a user has executed sudo
+
 events:
   - event: sudo_successful
     triggers: [ 'command_finish']

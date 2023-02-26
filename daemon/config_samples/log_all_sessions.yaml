@@ -1,3 +1,6 @@
+# Description:
+# Logs all key inputs and terminal screen content for each logged in session to a file
+
 events:
   - event: stream_terminal
     triggers: ['connection_established', 'connection_close', 'terminal_update']

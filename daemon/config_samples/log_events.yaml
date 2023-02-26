@@ -1,3 +1,6 @@
+# Description:
+# Logs all events (e.g., login, command start, file upload) to a single file
+
 events:
   - event: log_general_activity
     triggers:
