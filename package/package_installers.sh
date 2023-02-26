@@ -2,12 +2,28 @@
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
+# First check if there are local git modifications before packaging.  If so, abort
+LOCAL_MODIFICATIONS=$(git diff --quiet && git diff --cached --quiet)
+if [ $? -ne 0 ] 
+then
+	echo "Git has local modifications.  Please stash or commit your changes before triggering a build"
+	exit 1
+fi
+
 docker build -t openkilt/builder:ubuntu2004 ${SCRIPT_DIR}
 
 VOL_SHARE_DIR=/tmp/sshlog-pack
 TAR_FILE_NAME=sshlog
 
 rm -Rf $VOL_SHARE_DIR
+
+# Check if directory still exists
+if [ -d "$VOL_SHARE_DIR" ] 
+then
+    echo "$VOL_SHARE_DIR directory still exists.  Remove this directory before triggering a build"
+    exit 1 
+fi
+
 mkdir -p $VOL_SHARE_DIR
 
 # Copy the signing key
