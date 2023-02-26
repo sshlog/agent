@@ -1,10 +1,21 @@
+# Description:
+# Sends an alert to the slack webhook whenever a user logs in or tries to but fails to authenticate
+
 events:
-  - event: sudo_success
+  - event: login_success
     triggers: [ 'connection_established']
     filters:
       require_tty: True
       ignore_existing_logins: True
     actions:
       - action: send_to_slack
-        plugin: slack_action
-        slack_webhook_url: 'https://hooks.slack.com/services/XXXXXXXXXXX/YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY'
+
+  - event: auth_failure
+    triggers: ['connection_auth_failed']
+    actions:
+      - action: send_to_slack
+
+actions:
+  - action: send_to_slack
+    plugin: slack_action
+    slack_webhook_url: 'https://hooks.slack.com/services/XXXXXXXXXXX/YYYYYYYYYYY/ZZZZZZZZZZZZZZZZZZZZZZZZ'
