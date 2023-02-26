@@ -1,5 +1,5 @@
-#ifndef SSHBOUNCER_FAILED_LOGIN_WATCHER_H
-#define SSHBOUNCER_FAILED_LOGIN_WATCHER_H
+#ifndef SSHLOG_FAILED_LOGIN_WATCHER_H
+#define SSHLOG_FAILED_LOGIN_WATCHER_H
 
 #include "bpf/sshtrace_events.h"
 #include <iostream>
@@ -31,4 +31,4 @@ class FailedLoginWatcherThread {
 
 } // namespace sshlog
 
-#endif // SSHBOUNCER_FAILED_LOGIN_WATCHER_H
+#endif // SSHLOG_FAILED_LOGIN_WATCHER_H

@@ -1,5 +1,5 @@
-#ifndef SSHBOUNCER_EXISTING_CONNECTIONS_H
-#define SSHBOUNCER_EXISTING_CONNECTIONS_H
+#ifndef SSHLOG_EXISTING_CONNECTIONS_H
+#define SSHLOG_EXISTING_CONNECTIONS_H
 
 #include <stdint.h>
 #include <string>
@@ -36,4 +36,4 @@ private:
 };
 
 } // namespace sshlog
-#endif /* SSHBOUNCER_EXISTING_CONNECTIONS_H */
+#endif /* SSHLOG_EXISTING_CONNECTIONS_H */

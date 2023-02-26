@@ -34,11 +34,11 @@ int main(int argc, const char** argv) {
 
   sshlog_options opts = sshlog_get_default_options();
   if (debug_mode)
-    opts.log_level = SSHBOUNCER_LOG_LEVEL::LOG_DEBUG;
+    opts.log_level = SSHLOG_LOG_LEVEL::LOG_DEBUG;
   else
-    opts.log_level = SSHBOUNCER_LOG_LEVEL::LOG_WARNING;
+    opts.log_level = SSHLOG_LOG_LEVEL::LOG_WARNING;
 
-  SSHBOUNCER* sshb_inst = sshlog_init(&opts);
+  SSHLOG* sshb_inst = sshlog_init(&opts);
   while (!exiting && sshlog_is_ok(sshb_inst) == 0) {
     char* json_data = sshlog_event_poll(sshb_inst, 15);
     if (json_data != nullptr) {

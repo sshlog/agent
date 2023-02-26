@@ -1,5 +1,5 @@
-#ifndef SSHBOUNCER_TERMINAL_AGGREGATOR_H
-#define SSHBOUNCER_TERMINAL_AGGREGATOR_H
+#ifndef SSHLOG_TERMINAL_AGGREGATOR_H
+#define SSHLOG_TERMINAL_AGGREGATOR_H
 
 #include "bpf/sshtrace_events.h"
 #include <chrono>
@@ -71,4 +71,4 @@ class TerminalAggregator {
 
 } // namespace sshlog
 
-#endif // SSHBOUNCER_TERMINAL_AGGREGATOR_H
+#endif // SSHLOG_TERMINAL_AGGREGATOR_H

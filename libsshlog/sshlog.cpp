@@ -8,7 +8,7 @@
 
 using namespace sshlog;
 
-SSHBOUNCER* sshlog_init(sshlog_options* options) {
+SSHLOG* sshlog_init(sshlog_options* options) {
   struct sshlog_options default_options = sshlog_get_default_options();
   if (options == nullptr) {
     options = &default_options;
@@ -26,12 +26,12 @@ SSHBOUNCER* sshlog_init(sshlog_options* options) {
 
 sshlog_options sshlog_get_default_options() {
   sshlog_options opt;
-  opt.log_level = SSHBOUNCER_LOG_LEVEL::LOG_OFF;
+  opt.log_level = SSHLOG_LOG_LEVEL::LOG_OFF;
   return opt;
 }
 
 // Returns JSON encoded event data
-char* sshlog_event_poll(SSHBOUNCER* instance, int timeout_ms) {
+char* sshlog_event_poll(SSHLOG* instance, int timeout_ms) {
   SSHTraceWrapper* wrapper = (SSHTraceWrapper*) instance;
   if (wrapper->is_ok()) {
     char* json_data = wrapper->poll(timeout_ms);
@@ -44,7 +44,7 @@ char* sshlog_event_poll(SSHBOUNCER* instance, int timeout_ms) {
   return nullptr;
 }
 
-int sshlog_is_ok(SSHBOUNCER* instance) {
+int sshlog_is_ok(SSHLOG* instance) {
   SSHTraceWrapper* wrapper = (SSHTraceWrapper*) instance;
   return !wrapper->is_ok();
 }
@@ -52,4 +52,4 @@ int sshlog_is_ok(SSHBOUNCER* instance) {
 // Releases the memory for the event data string
 void sshlog_event_release(char* json_event_data) { free(json_event_data); }
 
-void sshlog_release(SSHBOUNCER* instance) { delete (SSHTraceWrapper*) instance; }
+void sshlog_release(SSHLOG* instance) { delete (SSHTraceWrapper*) instance; }

@@ -1,5 +1,5 @@
-#ifndef SSHBOUNCER_PTS_PARSER_H
-#define SSHBOUNCER_PTS_PARSER_H
+#ifndef SSHLOG_PTS_PARSER_H
+#define SSHLOG_PTS_PARSER_H
 
 #include "../bpf/sshtrace_types.h"
 #include <stdint.h>
@@ -31,4 +31,4 @@ class PtsParser {
 };
 
 } // namespace sshlog
-#endif /* SSHBOUNCER_PTS_PARSER_H */
+#endif /* SSHLOG_PTS_PARSER_H */

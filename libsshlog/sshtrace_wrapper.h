@@ -1,5 +1,5 @@
-#ifndef SSHBOUNCER_SSHTRACE_WRAPPER_H
-#define SSHBOUNCER_SSHTRACE_WRAPPER_H
+#ifndef SSHLOG_SSHTRACE_WRAPPER_H
+#define SSHLOG_SSHTRACE_WRAPPER_H
 
 #include "failed_login_watcher.h"
 #include "sshtrace.skel.h"
@@ -47,4 +47,4 @@ class SSHTraceWrapper {
 };
 
 } // namespace sshlog
-#endif /* SSHBOUNCER_SSHTRACE_WRAPPER_H */
+#endif /* SSHLOG_SSHTRACE_WRAPPER_H */

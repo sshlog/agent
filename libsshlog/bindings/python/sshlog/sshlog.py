@@ -13,33 +13,33 @@ else:
 # Load the C library
 lib = ctypes.CDLL('libsshlog.so.1')
 
-class SSHBOUNCER(ctypes.Structure):
+class SSHLOG(ctypes.Structure):
     pass
 
-# Define the sshlog_options and SSHBOUNCER structs
+# Define the sshlog_options and SSHLOG structs
 class sshlog_options(ctypes.Structure):
     _fields_ = [("log_level", ctypes.c_int)]
 
 # Define the argument and return types for the sshlog_init function
 lib.sshlog_init.argtypes = [ctypes.POINTER(sshlog_options)]
-lib.sshlog_init.restype = ctypes.POINTER(SSHBOUNCER)
+lib.sshlog_init.restype = ctypes.POINTER(SSHLOG)
 
 # Define the argument and return types for the sshlog_get_default_options function
 lib.sshlog_get_default_options.argtypes = []
 lib.sshlog_get_default_options.restype = sshlog_options
 
 # Define args for is_ok() function
-lib.sshlog_is_ok.argtypes = [ctypes.POINTER(SSHBOUNCER)]
+lib.sshlog_is_ok.argtypes = [ctypes.POINTER(SSHLOG)]
 
 # Define the argument and return types for the sshlog_event_poll function
-lib.sshlog_event_poll.argtypes = [ctypes.POINTER(SSHBOUNCER), ctypes.c_int]
+lib.sshlog_event_poll.argtypes = [ctypes.POINTER(SSHLOG), ctypes.c_int]
 lib.sshlog_event_poll.restype = ctypes.c_void_p
 
 # Define the argument types for the sshlog_event_release function
 lib.sshlog_event_release.argtypes = [ctypes.c_void_p]
 
 # Define the argument types for the sshlog_release function
-lib.sshlog_release.argtypes = [ctypes.POINTER(SSHBOUNCER)]
+lib.sshlog_release.argtypes = [ctypes.POINTER(SSHLOG)]
 
 
 
