@@ -5,6 +5,13 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 # Build daemon
 export PATH=${PATH}:/usr/local/bin/
 
+if [[ -f dist/sshlog && -f dist/sshlogd ]]; then
+    echo "Python binary compile skipped"
+    echo "./dist/sshlog and ./dist/sshlogd binaries already exist."
+    echo "To force recompile, delete these files first"
+    exit 0
+fi
+
 rm -Rf /tmp/sshlog_venv 2>/dev/null
 virtualenv /tmp/sshlog_venv
 source /tmp/sshlog_venv/bin/activate
