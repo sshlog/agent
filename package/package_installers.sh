@@ -34,8 +34,9 @@ debuild -b
 
 # Build the redhat packages
 mkdir -p /usr/lib/rpm/macros.d/ && cp distros/redhat/macros/* /usr/lib/rpm/macros.d/
-rpmbuild --build-in-place --define "_rpmdir /tmp/sshlog-pack/" --define "_build_name_fmt %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm"  -bb distros/redhat/sshlog.spec
-
+rpmbuild --build-in-place --define '_rpmdir /tmp/sshlog-pack/' --define '_build_name_fmt %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm'  -bb distros/redhat/sshlog.spec
+echo '%_gpg_name matt@openkilt.com' > ~/.rpmmacros
+rpmsign --addsign ../*.rpm
 chown ${HOST_USER_ID}:${HOST_GROUP_ID} ${VOL_SHARE_DIR}/* -R
 """ > ${VOL_SHARE_DIR}/sshlog/pack.sh
 chmod +x ${VOL_SHARE_DIR}/sshlog/pack.sh
