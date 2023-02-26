@@ -1,9 +1,8 @@
-from comms.dtos import SessionListRequestDto, SessionListResponseDto, EventWatchRequestDto
+from comms.dtos import SessionListResponseDto
 from prettytable import PrettyTable
-from prettytable import PLAIN_COLUMNS, SINGLE_BORDER
+from prettytable import PLAIN_COLUMNS
 import logging
 import json
-import time
 from comms.event_types import *
 import datetime
 import timeago
