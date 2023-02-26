@@ -1,6 +1,7 @@
 #include "sshtrace_wrapper.h"
 #include "bpf/sshtrace_events.h"
 #include "event_serializer.h"
+#include "failed_login_watcher.h"
 #include "proc_parsers/existing_connections.h"
 #include "proc_parsers/pts_parser.h"
 #include "terminal_aggregator.h"
@@ -51,7 +52,14 @@ static void bpf_poll_loop(SSHTraceWrapper* ctx) {
     PLOG_WARNING << "Exiting BPF polling due to error code " << ctx->bpf_err_code;
 }
 
-SSHTraceWrapper::SSHTraceWrapper() : terminal_aggregator(AGGREGATE_TERMINAL_MILLISECONDS_DELAY) {
+static void handle_failed_auth(struct connection_event ev, void* context) {
+  // Pass this directly to the event handler
+  PLOG_DEBUG << "Auth failed event for user: " << ev.conn.username << " pid: " << ev.ptm_pid << std::endl;
+  handle_event(context, -1, &ev, sizeof(ev));
+}
+
+SSHTraceWrapper::SSHTraceWrapper()
+    : terminal_aggregator(AGGREGATE_TERMINAL_MILLISECONDS_DELAY), failed_login_watcher(handle_failed_auth, this) {
 
   // First, identify all existing SSH connections and insert them.
   // The BPF hooks will only identify new connections moving forward
@@ -110,6 +118,9 @@ SSHTraceWrapper::SSHTraceWrapper() : terminal_aggregator(AGGREGATE_TERMINAL_MILL
     this->queue_event(&e);
   }
 
+  // Watch for failed login attempts via btmp file.  Ebpf can't really watch for that
+  FailedLoginWatcherThread failed_login_watcher(handle_failed_auth, this);
+
   /* Set up perf buffer polling */
 
 #ifdef SSHTRACE_USE_RINGBUF
@@ -129,6 +140,7 @@ SSHTraceWrapper::SSHTraceWrapper() : terminal_aggregator(AGGREGATE_TERMINAL_MILL
 
 SSHTraceWrapper::~SSHTraceWrapper() {
   /* Clean up */
+  failed_login_watcher.shutdown();
   exited = true;
   if (bpf_poll_thread->joinable())
     bpf_poll_thread->join();
@@ -203,6 +215,7 @@ static void handle_event(void* ctx, int cpu, void* data, uint32_t data_sz) {
   switch (event_type) {
   case SSHTRACE_EVENT_NEW_CONNECTION:
   case SSHTRACE_EVENT_CLOSE_CONNECTION:
+  case SSHTRACE_EVENT_AUTH_FAILED_CONNECTION:
   case SSHTRACE_EVENT_COMMAND_START:
   case SSHTRACE_EVENT_COMMAND_END:
   case SSHTRACE_EVENT_FILE_UPLOAD:

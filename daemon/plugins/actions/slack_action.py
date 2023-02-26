@@ -15,7 +15,11 @@ class slack_action(ActionPlugin):
         pass
 
     def _client_ip_str(self, event_data):
-        return f"{event_data['tcp_info']['client_ip']}:{event_data['tcp_info']['client_port']}"
+        client_port = event_data['tcp_info']['client_port']
+        if str(client_port) == '0':
+            return f"{event_data['tcp_info']['client_ip']}"
+        else:
+            return f"{event_data['tcp_info']['client_ip']}:{client_port}"
     def execute(self, event_data):
 
 
@@ -26,6 +30,8 @@ class slack_action(ActionPlugin):
             message = f"{event_data['username']} attempted connection to {session_id} from ip {self._client_ip_str(event_data)}"
         elif event_data['event_type'] == SSHTRACE_EVENT_ESTABLISHED_CONNECTION:
             message = f"{event_data['username']} connected to {session_id} from ip {self._client_ip_str(event_data)}"
+        elif event_data['event_type'] == SSHTRACE_EVENT_AUTH_FAILED_CONNECTION:
+            message = f"{event_data['username']} failed authorization attempt {session_id} from ip {self._client_ip_str(event_data)}"
         elif event_data['event_type'] == SSHTRACE_EVENT_CLOSE_CONNECTION:
             message = f"{event_data['username']} closed connection {session_id} from ip {self._client_ip_str(event_data)}"
         elif event_data['event_type'] == SSHTRACE_EVENT_COMMAND_START:

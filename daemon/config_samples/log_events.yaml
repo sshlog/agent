@@ -3,6 +3,7 @@ events:
     triggers:
       - connection_new
       - connection_established
+      - connection_auth_failed
       - connection_close
       - command_start
       - command_finish

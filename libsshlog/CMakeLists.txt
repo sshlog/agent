@@ -86,6 +86,7 @@ set(sshlog_SRC
   sshlog.cpp
   sshtrace_wrapper.cpp
   event_serializer.cpp
+  failed_login_watcher.cpp
   proc_parsers/pts_parser.cpp
   proc_parsers/existing_connections.cpp
 )

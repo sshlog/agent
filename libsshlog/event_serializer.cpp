@@ -13,6 +13,8 @@ static const char* get_event_str(int event_type) {
     return "connection_new";
   case SSHTRACE_EVENT_ESTABLISHED_CONNECTION:
     return "connection_established";
+  case SSHTRACE_EVENT_AUTH_FAILED_CONNECTION:
+    return "connection_auth_failed";
   case SSHTRACE_EVENT_CLOSE_CONNECTION:
     return "connection_close";
   case SSHTRACE_EVENT_COMMAND_START:
@@ -69,7 +71,8 @@ static int64_t compute_boottime_diff_from_realtime(int64_t boottime) {
   // Boottime (from bpf) will be in nanoseconds.  Convert to ms and add the diff to get to realtime
   return (boottime / NANOS_IN_A_MILLIS) + boottime_diff;
 }
-static void serialize_connection(const struct connection* conn, yyjson_mut_doc* doc, yyjson_mut_val* root) {
+static void serialize_connection(const struct connection_event* event, const struct connection* conn,
+                                 yyjson_mut_doc* doc, yyjson_mut_val* root) {
 
   yyjson_mut_obj_add_int(doc, root, "user_id", conn->user_id);
   yyjson_mut_obj_add_str(doc, root, "username", conn->username);
@@ -78,8 +81,16 @@ static void serialize_connection(const struct connection* conn, yyjson_mut_doc* 
   yyjson_mut_obj_add_int(doc, root, "shell_pid", conn->shell_tgid);
   yyjson_mut_obj_add_int(doc, root, "tty_id", conn->tty_id);
 
-  yyjson_mut_obj_add_int(doc, root, "start_time", compute_boottime_diff_from_realtime(conn->start_time));
-  yyjson_mut_obj_add_int(doc, root, "end_time", compute_boottime_diff_from_realtime(conn->end_time));
+  if (event->event_type == SSHTRACE_EVENT_AUTH_FAILED_CONNECTION) {
+    // Auth failures are not created via ebpf, so the timestamps are already in milliseconds.
+    // No need to do any extra conversion
+    yyjson_mut_obj_add_int(doc, root, "start_time", conn->start_time);
+    yyjson_mut_obj_add_int(doc, root, "end_time", conn->end_time);
+  } else {
+    yyjson_mut_obj_add_int(doc, root, "start_time", compute_boottime_diff_from_realtime(conn->start_time));
+    yyjson_mut_obj_add_int(doc, root, "end_time", compute_boottime_diff_from_realtime(conn->end_time));
+  }
+
   yyjson_mut_obj_add_int(doc, root, "start_timeraw", conn->start_time);
   yyjson_mut_obj_add_int(doc, root, "end_timeraw", conn->end_time);
 
@@ -103,6 +114,7 @@ static void serialize_connection(const struct connection* conn, yyjson_mut_doc* 
 static void serialize_command(const struct command* cmd, yyjson_mut_doc* doc, yyjson_mut_val* root) {
 
   yyjson_mut_obj_add_str(doc, root, "filename", cmd->filename);
+
   yyjson_mut_obj_add_int(doc, root, "start_time", compute_boottime_diff_from_realtime(cmd->start_time));
   yyjson_mut_obj_add_int(doc, root, "end_time", compute_boottime_diff_from_realtime(cmd->end_time));
 
@@ -129,11 +141,12 @@ char* serialize_event(void* event_struct) {
 
   if (e_generic->event_type == SSHTRACE_EVENT_NEW_CONNECTION ||
       e_generic->event_type == SSHTRACE_EVENT_ESTABLISHED_CONNECTION ||
+      e_generic->event_type == SSHTRACE_EVENT_AUTH_FAILED_CONNECTION ||
       e_generic->event_type == SSHTRACE_EVENT_CLOSE_CONNECTION) {
 
     const struct connection_event* e = (const struct connection_event*) event_struct;
     yyjson_mut_obj_add_int(doc, root, "ptm_pid", e->ptm_pid);
-    serialize_connection(&e->conn, doc, root);
+    serialize_connection(e, &e->conn, doc, root);
 
   } else if (e_generic->event_type == SSHTRACE_EVENT_COMMAND_START ||
              e_generic->event_type == SSHTRACE_EVENT_COMMAND_END) {

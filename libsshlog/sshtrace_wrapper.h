@@ -1,6 +1,7 @@
 #ifndef SSHBOUNCER_SSHTRACE_WRAPPER_H
 #define SSHBOUNCER_SSHTRACE_WRAPPER_H
 
+#include "failed_login_watcher.h"
 #include "sshtrace.skel.h"
 #include "terminal_aggregator.h"
 #include "utility/blockingconcurrentqueue.h"
@@ -42,6 +43,7 @@ class SSHTraceWrapper {
   moodycamel::BlockingConcurrentQueue<char*> q;
   TerminalAggregator terminal_aggregator;
   std::unique_ptr<std::thread> bpf_poll_thread;
+  FailedLoginWatcherThread failed_login_watcher;
 };
 
 } // namespace sshlog

@@ -50,18 +50,20 @@ class eventlogfile_action(ActionPlugin):
         else:
             # Reformat each item into a log-friendly format
 
-            str_format = f"{event_data['event_type']:{self.event_type_padding}}: ({event_data['ptm_pid']}) "
+            str_format = f"{event_data['event_type']:{self.event_type_padding}} ({event_data['ptm_pid']}) "
 
             if event_data['event_type'] == SSHTRACE_EVENT_NEW_CONNECTION:
-                str_format += f" from ip {self._client_ip_str(event_data)}"
+                str_format += f"from ip {self._client_ip_str(event_data)}"
             elif event_data['event_type'] == SSHTRACE_EVENT_ESTABLISHED_CONNECTION:
+                str_format += f"{event_data['username']} from ip {self._client_ip_str(event_data)} tty {event_data['tty_id']}"
+            elif event_data['event_type'] == SSHTRACE_EVENT_AUTH_FAILED_CONNECTION:
                 str_format += f"{event_data['username']} from ip {self._client_ip_str(event_data)}"
             elif event_data['event_type'] == SSHTRACE_EVENT_CLOSE_CONNECTION:
                 str_format += f"{event_data['username']} from ip {self._client_ip_str(event_data)}"
             elif event_data['event_type'] == SSHTRACE_EVENT_COMMAND_START:
-                str_format += f"{event_data['username']} executed {event_data['args']}"
+                str_format += f"{event_data['username'] + ' '}executed {event_data['args']}"
             elif event_data['event_type'] == SSHTRACE_EVENT_COMMAND_END:
-                str_format += f"{event_data['username']} execute complete (exit code: {event_data['exit_code']}) {event_data['args']}"
+                str_format += f"{event_data['username'] + ' '}execute complete (exit code: {event_data['exit_code']}) {event_data['args']}"
             elif event_data['event_type'] == SSHTRACE_EVENT_FILE_UPLOAD:
                 str_format += f"{event_data['username']} uploaded file {event_data['target_path']}"
             elif event_data['event_type'] == SSHTRACE_EVENT_TERMINAL_UPDATE:
