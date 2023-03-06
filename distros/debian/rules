@@ -25,8 +25,8 @@ override_dh_auto_install:
 	  -DCMAKE_INSTALL_SYSCONFDIR=/etc \
 	  -DCMAKE_VERBOSE_MAKEFILE=OFF \
 	  -DCMAKE_COLOR_MAKEFILE=ON \
-	  -Bbuild/ -S.
-	cd build; make -j8;	make install DESTDIR=../debian/tmp;
+	  -Bbuild_debian/ -S.
+	cd build_debian; make -j8;	make install DESTDIR=../debian/tmp;
 	./daemon/build_binary.sh
 	mkdir -p debian/tmp/usr/bin/ && cp dist/* debian/tmp/usr/bin/
 	mkdir -p debian/tmp/var/log/sshlog && chmod 700 debian/tmp/var/log/sshlog
