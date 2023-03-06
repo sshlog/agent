@@ -3,7 +3,7 @@
 
 events:
   - event: login_success
-    triggers: [ 'connection_established']
+    triggers: [ 'connection_established', 'connection_close']
     filters:
       require_tty: True
       ignore_existing_logins: True
