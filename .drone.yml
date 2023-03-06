@@ -1,0 +1,62 @@
+kind: pipeline
+name: ubuntu-2004-amd64
+
+platform:
+  os: linux
+  arch: amd64
+
+trigger:
+  branch:
+    - master
+    - release/*
+    - hotfix/*
+
+
+steps:
+  - name: prep_repo
+    image: sshlog/build:x86_64
+    pull: always
+    commands:
+      - git config --global --add safe.directory '*'
+      - git submodule update --init --recursive
+      - rm -Rf drone_src || true; mkdir drone_src
+      - cp -r * drone_src/ || true
+      #- git archive --prefix drone_src/ HEAD -- | tar -x -C ./
+      - cd drone_src/
+      - ln -s distros/debian debian || true
+
+  - name: build_debian
+    image: sshlog/build:x86_64
+    environment:
+      PACKAGE_SIGNING_KEY:
+        from_secret: PACKAGE_SIGNING_KEY
+    commands:
+      - cd drone_src/
+      - package/setup_drone_signingkey.sh
+      - debuild -b
+
+  - name: build_redhat
+    image: sshlog/build:x86_64
+    environment:
+      PACKAGE_SIGNING_KEY:
+        from_secret: PACKAGE_SIGNING_KEY
+    commands:
+      - cd drone_src/
+      - package/setup_drone_signingkey.sh
+      - rpmbuild --build-in-place --define '_rpmdir ../' --define '_build_name_fmt %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm'  -bb distros/redhat/sshlog.spec
+      - echo '%_gpg_name matt@openkilt.com' > ~/.rpmmacros
+      - rpmsign --addsign ../*.rpm
+
+
+  - name: upload_to_repo
+    image: sshlog/build:x86_64
+    environment:
+      OPENREPO_SERVER:
+        from_secret: OPENREPO_SERVER
+      OPENREPO_APIKEY:
+        from_secret: OPENREPO_APIKEY
+    commands:
+      - curl -L https://github.com/openkilt/openrepo/releases/download/v1.0.0/openrepo_cli_x86_64 -o /usr/local/bin/openrepo
+      - chmod +x /usr/local/bin/openrepo
+      - openrepo upload -o --repo sshlog-ubuntu-latest ./*.deb
+      - openrepo upload -o --repo sshlog-redhat-latest ./*.rpm

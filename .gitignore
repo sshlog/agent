@@ -6,3 +6,7 @@ unused2/
 __pycache__/
 *.bak
 *.swp
+*.deb
+*.ddeb
+*.rpm
+drone_src/
