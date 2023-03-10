@@ -13,7 +13,7 @@ Source0: %{name}-%{version}.tar.gz
 %{?systemd_requires}
 #Buildrequires: systemd-rpm-macros
 #BuildRequires: cmake
-#Requires: 
+Requires: systemd
 
 %description
 sshlog is a tool that logs SSH activity.
@@ -42,6 +42,9 @@ cd ../
 
 ./daemon/build_binary.sh
 ./distros/prep_install.sh %{buildroot}
+# Setup systemd config
+mkdir -p %{buildroot}/usr/lib/systemd/system-preset/
+echo "enable sshlog.service" > %{buildroot}/usr/lib/systemd/system-preset/80-sshlog.preset
 mkdir -p %{buildroot}/usr/lib/systemd/system/
 cp distros/redhat/sshlog.service %{buildroot}/usr/lib/systemd/system/ 
 
@@ -57,7 +60,12 @@ groupadd sshlog 2>/dev/null || true
 %systemd_post sshlog.service
 
 %postun
-%systemd_postun sshlog.service
+%systemd_postun_with_restart sshlog.service
+
+%posttrans
+# Start sshlog on install
+systemctl daemon-reload
+systemctl restart sshlog
 
 %files
 %defattr(-,root,root,-)
@@ -66,3 +74,4 @@ groupadd sshlog 2>/dev/null || true
 /var/log/sshlog
 /etc/sshlog/*
 /usr/lib/systemd/system/sshlog.service
+/usr/lib/systemd/system-preset/*.preset
