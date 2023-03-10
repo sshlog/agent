@@ -41,14 +41,8 @@ make install DESTDIR=%{buildroot}
 cd ../
 
 ./daemon/build_binary.sh
-mkdir -p %{buildroot}/usr/bin/
-cp dist/* %{buildroot}/usr/bin/
-mkdir -p %{buildroot}/var/log/sshlog && chmod 700 %{buildroot}/var/log/sshlog
-mkdir -p %{buildroot}/etc/sshlog/conf.d
-mkdir -p %{buildroot}/etc/sshlog/plugins
-mkdir -p %{buildroot}/etc/sshlog/samples
+./distros/prep_install.sh %{buildroot}
 mkdir -p %{buildroot}/usr/lib/systemd/system/
-cp daemon/config_samples/* %{buildroot}/etc/sshlog/samples/
 cp distros/redhat/sshlog.service %{buildroot}/usr/lib/systemd/system/ 
 
 %clean

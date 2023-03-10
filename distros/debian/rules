@@ -28,11 +28,6 @@ override_dh_auto_install:
 	  -Bbuild_debian/ -S.
 	cd build_debian; make -j8;	make install DESTDIR=../debian/tmp;
 	./daemon/build_binary.sh
-	mkdir -p debian/tmp/usr/bin/ && cp dist/* debian/tmp/usr/bin/
-	mkdir -p debian/tmp/var/log/sshlog && chmod 700 debian/tmp/var/log/sshlog
-	mkdir -p debian/tmp/etc/sshlog/conf.d
-	mkdir -p debian/tmp/etc/sshlog/plugins
-	mkdir -p debian/tmp/etc/sshlog/samples
-	cp daemon/config_samples/* debian/tmp/etc/sshlog/samples/
+	./distros/prep_install.sh debian/tmp
 
 
