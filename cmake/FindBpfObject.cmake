@@ -104,6 +104,7 @@ elseif(BPFOBJECT_BPFTOOL_EXE)
   # Generate vmlinux.h
   set(GENERATED_VMLINUX_DIR ${CMAKE_CURRENT_BINARY_DIR})
   set(BPFOBJECT_VMLINUX_H ${GENERATED_VMLINUX_DIR}/vmlinux.h)
+  message("-- Generating vmlinux.h using ${BPFOBJECT_BPFTOOL_EXE}")
   execute_process(COMMAND ${BPFOBJECT_BPFTOOL_EXE} btf dump file /sys/kernel/btf/vmlinux format c
     OUTPUT_FILE ${BPFOBJECT_VMLINUX_H}
     ERROR_VARIABLE VMLINUX_error
