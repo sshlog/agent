@@ -6,7 +6,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
       binutils           \
       build-essential    \
-      clang              \
+      clang-12           \
       cmake              \
       debhelper          \
       devscripts         \
@@ -15,13 +15,15 @@ RUN apt-get update && apt-get install -y \
       git                \
       libelf-dev         \
       linux-tools-$(uname -r) \
+      llvm               \
       pkg-config         \
       python3            \
       python3-dev        \
       python3-pip        \
       python3-virtualenv \
       rpm             && \
-      rm -rf /var/lib/apt/lists/*
+      rm -rf /var/lib/apt/lists/* && \
+      ln -s /usr/bin/clang-12 /usr/bin/clang
 
 
 
