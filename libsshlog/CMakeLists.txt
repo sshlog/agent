@@ -45,9 +45,22 @@ ExternalProject_Add(libbpf
   STEP_TARGETS build
 )
 
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
+    set (X86 TRUE)
+else ()
+    set (X86 FALSE)
+endif ()
+
 set(LIBBPF_INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/libbpf)
 set(LIBBPF_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libbpf/libbpf.a)
-set(BPFOBJECT_VMLINUX_H ${CMAKE_CURRENT_SOURCE_DIR}/bpf/vmlinux/vmlinux.h)
+
+if (X86)
+  message("-- BPF Using x86 vmlinux.h file")
+  set(BPFOBJECT_VMLINUX_H ${CMAKE_CURRENT_SOURCE_DIR}/bpf/vmlinux/x86/vmlinux.h)
+else()
+  message("-- BPF Using arm64 vmlinux.h file")
+  set(BPFOBJECT_VMLINUX_H ${CMAKE_CURRENT_SOURCE_DIR}/bpf/vmlinux/arm64/vmlinux.h)
+endif()
 
 if (USE_RINGBUF)
   # These define values are carried over in the FindBpfObject.cmake file which calls into clang
