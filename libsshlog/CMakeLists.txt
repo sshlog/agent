@@ -47,6 +47,7 @@ ExternalProject_Add(libbpf
 
 set(LIBBPF_INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/libbpf)
 set(LIBBPF_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libbpf/libbpf.a)
+set(BPFOBJECT_VMLINUX_H ${CMAKE_CURRENT_SOURCE_DIR}/bpf/vmlinux/vmlinux.h)
 
 if (USE_RINGBUF)
   # These define values are carried over in the FindBpfObject.cmake file which calls into clang
