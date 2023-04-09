@@ -1,6 +1,5 @@
 
 # These constants are defined in libsshlog sshtrace_events.h and mapped to strings in event_serializer.cpp
-SSHTRACE_EVENT_NEW_CONNECTION = 'connection_new'
 SSHTRACE_EVENT_ESTABLISHED_CONNECTION = 'connection_established'
 SSHTRACE_EVENT_CLOSE_CONNECTION = 'connection_close'
 SSHTRACE_EVENT_AUTH_FAILED_CONNECTION = 'connection_auth_failed'
@@ -9,8 +8,10 @@ SSHTRACE_EVENT_COMMAND_END = 'command_finish'
 SSHTRACE_EVENT_TERMINAL_UPDATE = 'terminal_update'
 SSHTRACE_EVENT_FILE_UPLOAD = 'file_upload'
 
+# The new connection event should never propagate to sshlog
+SSHTRACE_EVENT_NEW_CONNECTION = 'connection_new'
+
 SSHTRACE_ALL_EVENTS = [
-    SSHTRACE_EVENT_NEW_CONNECTION,
     SSHTRACE_EVENT_ESTABLISHED_CONNECTION,
     SSHTRACE_EVENT_AUTH_FAILED_CONNECTION,
     SSHTRACE_EVENT_CLOSE_CONNECTION,

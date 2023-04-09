@@ -51,6 +51,17 @@ def eventbus_sshtrace_push(event_data, session_tracker):
             event_data['tty_id'] = ''
 
     logger.debug(event_data)
+    # Skip some events that are pushed from the bpf library.  This is in order to simplify the data stream
+    if event_type == SSHTRACE_EVENT_NEW_CONNECTION:
+        # Do not propagate "connection_new" events
+        # These happen before the bash shell is created, and it is confusing since many commands are run
+        # (e.g., motd) but no username is attached
+        return
+    if event_type in [SSHTRACE_EVENT_COMMAND_START, SSHTRACE_EVENT_COMMAND_END] and \
+            ('username' not in event_data or event_data['username'] == ''):
+        # Do not propagate events before connection established
+        return
+
 
     # Run on multiple threads
     #event_threadpool_executor.submit(sshtrace_event_signals[event_type].send, event_data)

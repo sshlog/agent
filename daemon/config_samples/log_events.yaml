@@ -4,7 +4,6 @@
 events:
   - event: log_general_activity
     triggers:
-      - connection_new
       - connection_established
       - connection_auth_failed
       - connection_close

@@ -97,7 +97,6 @@ if __name__ == "__main__":
     elif args.command == 'watch':
 
         watch_events = [
-            SSHTRACE_EVENT_NEW_CONNECTION,
             SSHTRACE_EVENT_ESTABLISHED_CONNECTION,
             SSHTRACE_EVENT_CLOSE_CONNECTION,
             SSHTRACE_EVENT_COMMAND_START,

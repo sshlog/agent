@@ -3,7 +3,6 @@
 events:
   - event: send_stats
     triggers:
-      - connection_new
       - connection_established
       - connection_close
       - connection_auth_failed
