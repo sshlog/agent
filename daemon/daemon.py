@@ -26,11 +26,6 @@ def run_main():
         action='store_true',
         help='Print debug info'
     )
-    parser.add_argument(
-        '-f',
-        action='store_true',
-        help='Run daemon in the foreground'
-    )
 
     args = parser.parse_args()
 
