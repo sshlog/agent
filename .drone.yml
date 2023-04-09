@@ -95,3 +95,28 @@ steps:
     commands:
       - package/build_scripts/upload_to_openrepo.sh
 
+# ---
+
+# # Do a multi-stage build for Docker
+
+kind: pipeline
+name: docker_x86
+
+branches: ['master']
+
+platform: 
+  os: linux
+  arch: amd64
+
+steps:
+
+- name: docker
+  image: plugins/docker:linux-amd64
+  settings:
+    username: 
+      from_secret: docker_username
+    password:
+      from_secret: docker_password
+    repo: sshlog/agent
+    dockerfile: Dockerfile
+    tags: build-${DRONE_BUILD_NUMBER}
