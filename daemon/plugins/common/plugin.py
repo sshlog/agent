@@ -62,8 +62,8 @@ class EventPlugin:
         # Event has passed all filters, trigger actions
         for action in self.actions:
             try:
-                #action.execute(event_data)
-                action_threadpool_executor.submit(action.execute, event_data)
+                #action._execute(event_data)
+                action_threadpool_executor.submit(action._execute, event_data)
             except:
                 self.logger.exception(f"Error handling event for event plugin {self.name} action {action.name}")
 
@@ -170,6 +170,12 @@ class ActionPlugin:
         ''' Shutdown action to be overridden by child plugin '''
         pass
 
+    def _execute(self, event_data):
+        # Wrapper to log exceptions
+        try:
+            self.execute(event_data)
+        except:
+            self.logger.exception(f"Error triggering action plugin {self.name}")
     def execute(self, event_data):
         ''' Execute action to be overridden by child plugin '''
         raise RuntimeError("The detect function must be implemented for the event to function")
