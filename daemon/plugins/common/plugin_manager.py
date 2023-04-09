@@ -41,7 +41,7 @@ class PluginManager:
                 except yaml.YAMLError as e:
                     self.validation_errors.append(f"YAML error in config file {cfg} {e}")
                 except:
-                    self.validation_errors.append(f"YAML unexpected error in config file {cfg} {e}")
+                    self.validation_errors.append(f"YAML unexpected error in config file {cfg}")
                     logger.exception(f"Unexpected error parsing config file: {cfg}")
 
 
