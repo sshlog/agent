@@ -1,5 +1,6 @@
 blinker==1.5
 dataclasses-json==0.5.7
+datadog==0.45.0
 orjson==3.8.4
 prettytable==3.6.0
 PyYAML==6.0

@@ -1,0 +1,20 @@
+# Description:
+# Generates datapoints for each configured event and sends to statsd (e.g., telegraf server or datadog)
+events:
+  - event: send_stats
+    triggers:
+      - connection_new
+      - connection_established
+      - connection_close
+      - connection_auth_failed
+      - command_start
+      - command_finish
+      - file_upload
+    filters:
+      ignore_existing_logins: True
+    actions:
+      - action: send_to_statsd
+        plugin: statsd_action
+        server_address: localhost
+        port: 8125
+        statsd_prefix: sshlog.servers
