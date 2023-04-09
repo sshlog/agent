@@ -3,7 +3,8 @@ from prettytable import PrettyTable
 from prettytable import PLAIN_COLUMNS
 import logging
 import json
-from comms.event_types import *
+from datetime import datetime
+from events.log_formatter import LogFormatter
 import datetime
 import timeago
 import timeago.locales.en # Import this explicitly so that pyinstaller finds it
@@ -42,19 +43,14 @@ def print_event_structured(event, output_json=False):
     if output_json:
         logger.info(json.dumps(event))
     else:
-        #logger.info(json.dumps(event))
-        event_str = ''
+        event_formatter = LogFormatter()
 
-        if event['event_type'] == SSHTRACE_EVENT_NEW_CONNECTION or event['event_type'] == SSHTRACE_EVENT_ESTABLISHED_CONNECTION or \
-                event['event_type'] == SSHTRACE_EVENT_CLOSE_CONNECTION:
-            event_str = f"pid {event['ptm_pid']} {event['username']}:{event['tty_id']} {event['event_type']}"
-        elif event['event_type'] == SSHTRACE_EVENT_COMMAND_END or event['event_type'] == SSHTRACE_EVENT_COMMAND_START:
-            event_str = f"pid {event['ptm_pid']} {event['username']}:{event['tty_id']} {event['event_type']} {event['filename']}"
-        elif event['event_type'] == SSHTRACE_EVENT_FILE_UPLOAD:
-            event_str = f"pid {event['ptm_pid']} {event['username']}:{event['tty_id']} {event['event_type']} {event['target_path']}"
-        else:
-            event_str = f"UNKNOWN EVENT: {json.dumps(event)}"
-        logger.info(event_str)
+        event_str = event_formatter.format(event)
+
+        now = datetime.datetime.now()
+        current_time = now.strftime("%H:%M:%S")
+
+        logger.info(current_time + " " + event_str)
 
         # for k, v in sorted(event.items()):
         #     if k == 'event_type': # Skip event type since we've already printed it
