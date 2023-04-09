@@ -8,8 +8,6 @@ platform:
 trigger:
   branch:
     - master
-    - release/*
-    - hotfix/*
 
 
 steps:
@@ -17,13 +15,7 @@ steps:
     image: sshlog/build:latest
     pull: always
     commands:
-      - git config --global --add safe.directory '*'
-      - git submodule update --init --recursive
-      - rm -Rf drone_src || true; mkdir drone_src
-      - cp -r * drone_src/ || true
-      #- git archive --prefix drone_src/ HEAD -- | tar -x -C ./
-      - cd drone_src/
-      - ln -s distros/debian debian || true
+      - package/build_scripts/prep_repo.sh
 
   - name: build_debian
     image: sshlog/build:latest
@@ -31,9 +23,7 @@ steps:
       PACKAGE_SIGNING_KEY:
         from_secret: PACKAGE_SIGNING_KEY
     commands:
-      - cd drone_src/
-      - package/setup_drone_signingkey.sh
-      - debuild -b
+      - package/build_scripts/build_deb.sh
 
   - name: build_redhat
     image: sshlog/build:latest
@@ -41,12 +31,7 @@ steps:
       PACKAGE_SIGNING_KEY:
         from_secret: PACKAGE_SIGNING_KEY
     commands:
-      - cd drone_src/
-      - package/setup_drone_signingkey.sh
-      - mkdir -p /usr/lib/rpm/macros.d/ && cp distros/redhat/macros/* /usr/lib/rpm/macros.d/
-      - rpmbuild --build-in-place --define '_rpmdir ../' --define '_build_name_fmt %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm'  -bb distros/redhat/sshlog.spec
-      - echo '%_gpg_name matt@openkilt.com' > ~/.rpmmacros
-      - rpmsign --addsign ../*.rpm
+      - package/build_scripts/build_rpm.sh
 
 
   - name: upload_to_repo
@@ -57,10 +42,7 @@ steps:
       OPENREPO_APIKEY:
         from_secret: OPENREPO_APIKEY
     commands:
-      - curl -L https://github.com/openkilt/openrepo/releases/download/v1.0.0/openrepo_cli_$(uname -m) -o /usr/local/bin/openrepo
-      - chmod +x /usr/local/bin/openrepo
-      - openrepo upload -o --repo sshlog-ubuntu-latest ./*.deb
-      - openrepo upload -o --repo sshlog-redhat-latest ./*.rpm
+      - package/build_scripts/upload_to_openrepo.sh
 
 ---
 
@@ -77,8 +59,6 @@ platform:
 trigger:
   branch:
     - master
-    - release/*
-    - hotfix/*
 
 
 steps:
@@ -86,13 +66,7 @@ steps:
     image: sshlog/build:latest
     pull: always
     commands:
-      - git config --global --add safe.directory '*'
-      - git submodule update --init --recursive
-      - rm -Rf drone_src || true; mkdir drone_src
-      - cp -r * drone_src/ || true
-      #- git archive --prefix drone_src/ HEAD -- | tar -x -C ./
-      - cd drone_src/
-      - ln -s distros/debian debian || true
+      - package/build_scripts/prep_repo.sh
 
   - name: build_debian
     image: sshlog/build:latest
@@ -100,9 +74,7 @@ steps:
       PACKAGE_SIGNING_KEY:
         from_secret: PACKAGE_SIGNING_KEY
     commands:
-      - cd drone_src/
-      - package/setup_drone_signingkey.sh
-      - debuild -b
+      - package/build_scripts/build_deb.sh
 
   - name: build_redhat
     image: sshlog/build:latest
@@ -110,12 +82,7 @@ steps:
       PACKAGE_SIGNING_KEY:
         from_secret: PACKAGE_SIGNING_KEY
     commands:
-      - cd drone_src/
-      - package/setup_drone_signingkey.sh
-      - mkdir -p /usr/lib/rpm/macros.d/ && cp distros/redhat/macros/* /usr/lib/rpm/macros.d/
-      - rpmbuild --build-in-place --define '_rpmdir ../' --define '_build_name_fmt %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm'  -bb distros/redhat/sshlog.spec
-      - echo '%_gpg_name matt@openkilt.com' > ~/.rpmmacros
-      - rpmsign --addsign ../*.rpm
+      - package/build_scripts/build_rpm.sh
 
 
   - name: upload_to_repo
@@ -126,7 +93,5 @@ steps:
       OPENREPO_APIKEY:
         from_secret: OPENREPO_APIKEY
     commands:
-      - curl -L https://github.com/openkilt/openrepo/releases/download/v1.0.0/openrepo_cli_$(uname -m) -o /usr/local/bin/openrepo
-      - chmod +x /usr/local/bin/openrepo
-      - openrepo upload -o --repo sshlog-ubuntu-latest ./*.deb
-      - openrepo upload -o --repo sshlog-redhat-latest ./*.rpm
+      - package/build_scripts/upload_to_openrepo.sh
+
