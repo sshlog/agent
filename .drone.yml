@@ -95,9 +95,9 @@ steps:
     commands:
       - package/build_scripts/upload_to_openrepo.sh
 
-# ---
+---
 
-# # Do a multi-stage build for Docker
+# Do a multi-stage build for Docker
 
 kind: pipeline
 name: docker_x86
