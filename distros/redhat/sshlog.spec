@@ -6,7 +6,7 @@ Version: %{version_from_deb}
 Release: %{patch_ver_from_deb}%{?dist}
 Summary: SSH logging utility
 
-License: AGPLv3
+License: RSALv2
 URL: https://github.com/sshlog/sshlog
 Source0: %{name}-%{version}.tar.gz
 
