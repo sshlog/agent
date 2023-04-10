@@ -18,3 +18,5 @@ RUN apt-get update && apt-get install -y \
     libelf1 && \
     dpkg -i ./*.deb && \
     rm -rf /var/lib/apt/lists/*
+
+CMD ["sshlogd"]
