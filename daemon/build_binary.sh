@@ -28,7 +28,7 @@ FILTER_PLUGINS=$(find $SCRIPT_DIR/plugins/filters -name "*.py" | awk '{print "--
 
 # Tell PyInstaller to explicitly bundle all python plugin files, in order to resolve all dependencies
 # The files will be packed (duplicitively) in a folder, and they'll be loaded at runtime
-PLUGIN_PYTHON_FILES=$(find ${SCRIPT_DIR}/plugins/ -name "*.py" | xargs)
+PLUGIN_PYTHON_FILES=$(find ${SCRIPT_DIR}/plugins/actions ${SCRIPT_DIR}/plugins/filters -name "*.py" | xargs)
 
 pyinstaller --onefile $HIDDEN_IMPORTS $ACTION_PLUGINS $FILTER_PLUGINS ${SCRIPT_DIR}/daemon.py ${PLUGIN_PYTHON_FILES} -n sshlogd
 
