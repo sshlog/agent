@@ -26,7 +26,11 @@ HIDDEN_IMPORTS=$(findimports --ignore-stdlib  ${SCRIPT_DIR}/plugins/actions/ ${S
 ACTION_PLUGINS=$(find $SCRIPT_DIR/plugins/actions -name "*.py" | awk '{print "--add-data " $1 ":plugins/actions";}' | xargs)
 FILTER_PLUGINS=$(find $SCRIPT_DIR/plugins/filters -name "*.py" | awk '{print "--add-data " $1 ":plugins/filters";}' | xargs)
 
-pyinstaller --onefile $HIDDEN_IMPORTS $ACTION_PLUGINS $FILTER_PLUGINS ${SCRIPT_DIR}/daemon.py -n sshlogd
+# Tell PyInstaller to explicitly bundle all python plugin files, in order to resolve all dependencies
+# The files will be packed (duplicitively) in a folder, and they'll be loaded at runtime
+PLUGIN_PYTHON_FILES=$(find ${SCRIPT_DIR}/plugins/ -name "*.py" | xargs)
+
+pyinstaller --onefile $HIDDEN_IMPORTS $ACTION_PLUGINS $FILTER_PLUGINS ${SCRIPT_DIR}/daemon.py ${PLUGIN_PYTHON_FILES} -n sshlogd
 
 # Build client
 
