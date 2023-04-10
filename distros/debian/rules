@@ -27,7 +27,7 @@ override_dh_auto_install:
 	  -DCMAKE_COLOR_MAKEFILE=ON \
 	  -Bbuild_debian/ -S.
 	cd build_debian; make -j8;	make install DESTDIR=../debian/tmp;
-	./daemon/build_binary.sh
+	bash -x ./daemon/build_binary.sh
 	./distros/prep_install.sh debian/tmp
 
 
