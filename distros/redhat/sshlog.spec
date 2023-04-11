@@ -40,8 +40,8 @@ cd build_redhat/
 make install DESTDIR=%{buildroot}
 cd ../
 
-./daemon/build_binary.sh
-./distros/prep_install.sh %{buildroot}
+bash -x ./daemon/build_binary.sh
+bash -x ./distros/prep_install.sh %{buildroot}
 # Setup systemd config
 mkdir -p %{buildroot}/usr/lib/systemd/system-preset/
 echo "enable sshlog.service" > %{buildroot}/usr/lib/systemd/system-preset/80-sshlog.preset
