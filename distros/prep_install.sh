@@ -19,7 +19,7 @@ mkdir -p ${TARGET_BASE_DIR}/var/log/sshlog && chmod 700 ${TARGET_BASE_DIR}/var/l
 mkdir -p ${TARGET_BASE_DIR}/etc/sshlog/conf.d
 mkdir -p ${TARGET_BASE_DIR}/etc/sshlog/plugins
 mkdir -p ${TARGET_BASE_DIR}/etc/sshlog/samples
-cp daemon/config_samples/* ${TARGET_BASE_DIR}/etc/sshlog/samples/
+cp daemon/config_samples/*.yaml ${TARGET_BASE_DIR}/etc/sshlog/samples/
 
 # Copy the session and event log config to the conf.d folder
 cp ${TARGET_BASE_DIR}/etc/sshlog/samples/log_all_sessions.yaml ${TARGET_BASE_DIR}/etc/sshlog/conf.d
