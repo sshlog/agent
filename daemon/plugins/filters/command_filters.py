@@ -9,6 +9,10 @@ class command_name_filter(FilterPlugin):
 
     def filter(self, event_data):
         command_to_match = self.filter_arg
+
+        if isinstance(command_to_match, list):
+            return event_data['filename'] in command_to_match
+
         if event_data['filename'] != command_to_match:
             return False
 
@@ -29,6 +33,9 @@ class command_exit_code_filter(FilterPlugin):
 
     def filter(self, event_data):
         exit_code_eval_string = self.filter_arg
+
+        if isinstance(exit_code_eval_string, list):
+            return event_data['exit_code'] in exit_code_eval_string
         # Handle strings such as != 0, > 1, etc.
         return self._compare_numbers(exit_code_eval_string, event_data['exit_code'])
 

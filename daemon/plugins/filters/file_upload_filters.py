@@ -12,6 +12,10 @@ class upload_file_path_filter(FilterPlugin):
     def filter(self, event_data):
         expected_path = self.filter_arg
         target_path = event_data['target_path']
+
+        if isinstance(expected_path, list):
+            return target_path in expected_path
+
         if os.path.realpath(expected_path) != os.path.realpath(target_path):
             return False
 

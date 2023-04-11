@@ -49,7 +49,9 @@ class username_filter(FilterPlugin):
     def filter(self, event_data):
         user = self.filter_arg
 
-        if user != '*' and user != '' and user is not None:
+        if isinstance(user, list):
+            return event_data['username'] in user
+        elif user != '*' and user != '' and user is not None:
             if user != event_data['username']:
                 return False
 
