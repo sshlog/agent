@@ -28,6 +28,6 @@ override_dh_auto_install:
 	  -Bbuild_debian/ -S.
 	cd build_debian; make -j8;	make install DESTDIR=../debian/tmp;
 	bash -x ./daemon/build_binary.sh
-	./distros/prep_install.sh debian/tmp
+	bash -x ./distros/prep_install.sh debian/tmp
 
 
