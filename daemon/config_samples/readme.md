@@ -1,4 +1,4 @@
-#sshlog config
+# sshlog config
 
 The sshlog library provides a set of event-driven actions that can monitor, log, and react to SSH-related activities on a server. Included are a number of sample YAML configuration files to enable different types of logging and event-triggered actions. In this guide, we will describe how to configure the sshlog library with YAML configuration files.
 
@@ -113,4 +113,3 @@ Below is a list of possible actions:
   - **email_action** - Send an e-mail using the specified SMTP server
     Parameters: sender, recipient, subject, body, smtp_server, smtp_port, username=None, password=None
 
-    
