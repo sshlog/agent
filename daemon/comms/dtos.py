@@ -13,6 +13,8 @@ EVENT_WATCH_RESPONSE = 102
 
 SHELL_SENDKEYS_REQUEST = 201
 
+KILL_SESSION_REQUEST = 301
+KILL_SESSION_RESPONSE = 302
 
 class SerializableMessage:
     def __init__(self, dto_payload):
@@ -74,10 +76,24 @@ class ShellSendKeysRequestDto:
 
 @dataclass_json
 @dataclass(frozen=True)
+class KillSessionRequestDto:
+    ptm_pid: int
+    payload_type: int = KILL_SESSION_REQUEST
+
+
+@dataclass_json
+@dataclass(frozen=True)
 class EventWatchResponseDto:
     event_type: str
     payload_json: str
     payload_type: int = EVENT_WATCH_RESPONSE
+
+
+@dataclass_json
+@dataclass(frozen=True)
+class KillSessionResponseDto:
+    success: bool
+    payload_type: int = KILL_SESSION_RESPONSE
 
 
 @dataclass_json
@@ -118,6 +134,10 @@ def deserialize_message(json_data):
         return ResponseMessage(EventWatchResponseDto.from_json(raw_dict['dto_payload']), client_id=raw_dict['client_id'], correlation_id=raw_dict['correlation_id'])
     elif raw_dict['payload_type'] == SHELL_SENDKEYS_REQUEST:
         return ResponseMessage(ShellSendKeysRequestDto.from_json(raw_dict['dto_payload']), client_id=raw_dict['client_id'], correlation_id=raw_dict['correlation_id'])
+    elif raw_dict['payload_type'] == KILL_SESSION_REQUEST:
+        return ResponseMessage(KillSessionRequestDto.from_json(raw_dict['dto_payload']), client_id=raw_dict['client_id'], correlation_id=raw_dict['correlation_id'])
+    elif raw_dict['payload_type'] == KILL_SESSION_RESPONSE:
+        return ResponseMessage(KillSessionResponseDto.from_json(raw_dict['dto_payload']), client_id=raw_dict['client_id'], correlation_id=raw_dict['correlation_id'])
     else:
         raise NotImplementedError(f"Could not deserialize message type for JSON {json_data}")
 

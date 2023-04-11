@@ -2,8 +2,8 @@ import threading
 import queue
 import zmq
 from .dtos import RequestMessage, ResponseMessage, deserialize_message
-from .dtos import SESSION_LIST_REQUEST, EVENT_WATCH_REQUEST, SHELL_SENDKEYS_REQUEST
-from .request_handlers import ListSessionHandler, WatchHandler
+from .dtos import SESSION_LIST_REQUEST, EVENT_WATCH_REQUEST, SHELL_SENDKEYS_REQUEST, KILL_SESSION_REQUEST
+from .request_handlers import ListSessionHandler, WatchHandler, KillSessionHandler
 from trackers.tracker import Tracker
 from .active_streams import ActiveStreams
 import logging
@@ -124,6 +124,12 @@ class MQLocalServer(threading.Thread):
             lsh = ListSessionHandler(request_message, self.session_tracker,
                                      self.response_queue, self.stay_alive)
             lsh.start()
+
+        elif request_message.dto_payload.payload_type == KILL_SESSION_REQUEST:
+            logger.debug("Launching Kill Session task")
+            ksh = KillSessionHandler(request_message, self.response_queue, self.stay_alive)
+            ksh.start()
+
 
         elif request_message.dto_payload.payload_type == EVENT_WATCH_REQUEST:
             if self.active_streams.is_active(request_message.correlation_id):

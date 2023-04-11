@@ -3,7 +3,8 @@ import logging
 import os
 import sys
 from comms.mq_client import MQClient
-from comms.dtos import SessionListRequestDto, SessionListResponseDto, EventWatchRequestDto, ShellSendKeysRequestDto
+from comms.dtos import SessionListRequestDto, SessionListResponseDto, EventWatchRequestDto, \
+    ShellSendKeysRequestDto, KillSessionRequestDto
 from cli.formatter import print_sessions, print_event_structured
 from cli.terminal_emulator import TerminalEmulator, TERM_QUIT_KEY
 from comms.event_types import *
@@ -69,7 +70,7 @@ if __name__ == "__main__":
 
     # create the parser for the "kill" subcommand
     parser_kill = subparsers.add_parser('kill', help='Kill a session')
-    parser_kill.add_argument('session_id', help='ID of the session to kill')
+    parser_kill.add_argument('tty_id', type=int, help='TTY ID of the session to kill')
 
     ## Upload CLI options
     # Upload is handled specially because the arguments (e.g., multiple file paths) is a little different
@@ -113,6 +114,27 @@ if __name__ == "__main__":
 
         list_data = response.dto_payload  # type: SessionListResponseDto
         print_sessions(list_data, output_json=args.json)
+
+    elif args.command == 'kill':
+
+        # First get the sessions list, verify that our session is listed.
+        ptm_id = request_ptm_pid(args.tty_id)
+
+        correlation_id = client.make_request(KillSessionRequestDto(ptm_pid=ptm_id))
+        response = client.listen_for_response(correlation_id)
+
+        if response is None:
+            logger.error("Unable to communicate with sshlogd")
+            sys.exit(1)
+
+        response_data = response.dto_payload  # type: KillSessionResponseDto
+
+        if response_data.success:
+            print(f"Successfully terminated SSH session TTY {args.tty_id} (pid: {ptm_id})")
+        else:
+            print("Error terminating SSH session TTY {args.tty_id} (pid: {ptm_id})")
+
+
 
     elif args.command == 'watch':
 

@@ -1,9 +1,12 @@
 import threading
 from trackers.tracker import Tracker
 import queue
-from .dtos import SessionListResponseDto, SessionDto, EventWatchResponseDto, ResponseMessage, RequestMessage
+from .dtos import SessionListResponseDto, SessionDto, EventWatchResponseDto, ResponseMessage, \
+    RequestMessage, KillSessionResponseDto
 from events.event_bus import eventbus_sshtrace_subscribe, eventbus_sshtrace_unsubscribe
 from comms.event_types import *
+import os
+import signal
 import time
 import logging
 
@@ -61,9 +64,32 @@ class ListSessionHandler(RequestHandler):
             ))
         resp_dto = SessionListResponseDto(sessions=all_sessions)
 
-        print(resp_dto)
         self.return_data(resp_dto)
 
+
+class KillSessionHandler(RequestHandler):
+
+    def __init__(self, request_message: RequestMessage, response_queue: queue.Queue,
+                 stay_alive_func,
+                group=None, target=None, name=None, args=(), kwargs=None):
+        self.ptm_pid = request_message.dto_payload.ptm_pid
+        super(KillSessionHandler, self).__init__(request_message.client_id, request_message.correlation_id,
+                                                 response_queue, stay_alive_func,
+                                                 group=group, target=target, name=name)
+
+    def run(self):
+
+        # check if process exists
+        if os.path.exists(f"/proc/{self.ptm_pid}"):
+            # terminate the process
+            os.kill(self.ptm_pid, signal.SIGTERM)
+            success = True
+        else:
+            success = False
+
+        resp_dto = KillSessionResponseDto(success=success)
+
+        self.return_data(resp_dto)
 
 class WatchHandler(RequestHandler):
 
