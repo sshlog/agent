@@ -10,3 +10,4 @@ __pycache__/
 *.ddeb
 *.rpm
 drone_src/
+drone_secrets
