@@ -1,0 +1,5 @@
+dist/
+build/
+sshlog.spec
+sshlogd.spec
+
