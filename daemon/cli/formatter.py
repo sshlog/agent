@@ -20,8 +20,6 @@ def _convert_epoch_ms_to_time_ago(epoch_ms):
 
 
 def print_sessions(sessions_list: SessionListResponseDto, output_json=False):
-    pass
-
 
     if output_json:
         logger.info(sessions_list.to_json())
@@ -36,7 +34,11 @@ def print_sessions(sessions_list: SessionListResponseDto, output_json=False):
                    f'{session.client_ip}:{session.client_port}', session.tty_id]
             out_table.add_row(row)
 
-        logger.info("\n" + out_table.get_string(sortby='User'))
+        # If there's no rows, add a dummy row so that the headers will still print
+        if len(sessions_list.sessions) == 0:
+            out_table.add_row([''] * len(fields))
+
+        logger.info(out_table.get_string(sortby='User'))
 
 
 def print_event_structured(event, output_json=False):
