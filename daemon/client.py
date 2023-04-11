@@ -12,6 +12,26 @@ import os
 import time
 
 
+def request_ptm_pid(tty_id):
+    # First get the sessions list, verify that our session is listed.
+    correlation_id = client.make_request(SessionListRequestDto())
+
+    response = client.listen_for_response(correlation_id)
+    if response is None:
+        logger.error("Unable to communicate with sshlogd")
+        sys.exit(1)
+    list_data = response.dto_payload  # type: SessionListResponseDto
+    ptm_id = -1
+    for sess in list_data.sessions:
+        if sess.tty_id == tty_id:
+            ptm_id = sess.ptm_pid
+
+    if ptm_id <= 0:
+        logger.error(f"Cannot find session with TTY ID {tty_id}")
+        sys.exit(1)
+
+    return ptm_id
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="SSHLog Command Line Interface")
@@ -125,21 +145,7 @@ if __name__ == "__main__":
     elif args.command == 'attach':
 
         # First get the sessions list, verify that our session is listed.
-        correlation_id = client.make_request(SessionListRequestDto())
-
-        response = client.listen_for_response(correlation_id)
-        if response is None:
-            logger.error("Unable to communicate with sshlogd")
-            sys.exit(1)
-        list_data = response.dto_payload  # type: SessionListResponseDto
-        ptm_id = -1
-        for sess in list_data.sessions:
-            if sess.tty_id == args.tty_id:
-                ptm_id = sess.ptm_pid
-
-        if ptm_id <= 0:
-            logger.error(f"Cannot find session with TTY ID {args.tty_id}")
-            sys.exit(1)
+        ptm_id = request_ptm_pid(args.tty_id)
 
         # Sanity check, make sure they're not trying to attach to their own ssh session
         # This doesn't currently handle cases where user has sudo'd or is ssh'd inside and ssh session
