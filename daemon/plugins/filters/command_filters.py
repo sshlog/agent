@@ -1,3 +1,7 @@
+# Copyright 2023- by Open Kilt LLC. All rights reserved.
+# This file is part of the SSHLog Software (SSHLog)
+# Licensed under the Redis Source Available License 2.0 (RSALv2)
+
 from plugins.common.plugin import FilterPlugin
 from comms.event_types import SSHTRACE_EVENT_COMMAND_START, SSHTRACE_EVENT_COMMAND_END
 

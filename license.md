@@ -2,7 +2,7 @@
 _Last Update: November 15, 2022_
 
 This software is licensed under the **RSALv2** license agreement.  
-Copyright (c) 2023 Open Kilt LLC.
+Copyright (c) 2023- Open Kilt LLC.
 
 ## Acceptance
 By using the software, you agree to all of the terms and conditions below.
