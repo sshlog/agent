@@ -32,7 +32,7 @@ cmake \
     -DCMAKE_VERBOSE_MAKEFILE=OFF \
     -DCMAKE_COLOR_MAKEFILE=ON \
     -Bbuild_redhat/ -S.
-cd build_redhat; make -j8;
+cd build_redhat; make;
 
 %install
 rm -rf %{buildroot}
