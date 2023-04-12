@@ -10,7 +10,7 @@ SSHLog is a free, source-available Linux daemon that passively monitors OpenSSH 
   - Configurable/Extendable **plug-in architecture** to execute custom actions triggered by SSH activity
 
 
-SSHLog works with your existing OpenSSH server process, no alternative SSH daemon is required.  Just install the sshlog package to begin monitoring SSH.
+SSHLog is configurable, any combination of features may be enabled, disabled, or customized.  It works with your existing OpenSSH server process, no alternative SSH daemon is required.  Just install the sshlog package to begin monitoring SSH.
 
 
 ## Quick Start
@@ -36,7 +36,7 @@ Interact with the daemon via the CLI app:
       
      User        Last Activity             Last Command               Session Start              Client IP           TTY
     mhill           just now              /usr/bin/gcc             2023-04-10 16:16:18        127.0.0.1:58668         17
-    billy          10 min ago           /usr/sbin/fdisk            2023-04-10 12:11:05        15.12.5.8:58669         32
+    billy          10 min ago            /usr/sbin/fdisk           2023-04-10 12:11:05        15.12.5.8:58669         32
 
 
 #### Monitor real-time SSH activity
@@ -119,9 +119,11 @@ The configuration files can be customized to trigger any number of actions based
   - Trigger a script if anyone runs the "nmap" command.
   - Send an e-mail if a particular username uploads a file via scp
 
-Active configuraitons are located in /etc/sshlog/conf.d/
+Active configurations are located in /etc/sshlog/conf.d/
 
-Sample configurations for reference are located in /etc/sshlog/samples/ and additional [documentation describing the configuration files can be found here](daemon/config_samples/readme.md)
+Sample configurations for reference are located in /etc/sshlog/samples/ 
+
+Detailed configuration documentation is available in the [daemon/config_samples/](daemon/config_samples/readme.md) folder
 
 
 ## Custom Plug-ins
