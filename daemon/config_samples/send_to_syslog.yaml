@@ -1,0 +1,22 @@
+# Description:
+# Logs all events (e.g., login, command start, file upload) to a remote syslog server
+
+events:
+  - event: log_activity_to_syslog
+    triggers:
+      - connection_established
+      - connection_auth_failed
+      - connection_close
+      - command_start
+      - command_finish
+      - file_upload
+    filters:
+      ignore_existing_logins: True
+    actions:
+      - action: syslog_to_localhost
+        plugin: syslog_action
+        server_address: localhost
+        port: 5140
+        udp: True
+        output_json: False
+        program_name: sshlog

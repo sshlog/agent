@@ -5,6 +5,7 @@ SSHLog is a free, source-available Linux daemon that passively monitors OpenSSH 
   - **Record all SSH session activity** (commands and output) to log files for any connecting user
   - Allow administrators to **share an SSH session** with any logged in user
   - Watch SSH sessions and **post Slack messages** or run arbitrary commands when specific activity occurs
+  - Forward all SSH events to a **remote syslog server**
   - Send **statsd metrics** to track user logins, disconnects, command activity, etc.
   - Configurable/Extendable **plug-in architecture** to execute custom actions triggered by SSH activity
 
