@@ -98,9 +98,6 @@ Interact with the daemon via the CLI app:
     # you could place the config files and log file volume mounts elsewhere if you prefer
     docker run -d --restart=always --name sshlog \
            --privileged \
-           --cap-add=SYS_ADMIN \
-           --cap-add=SYS_PTRACE \
-           --security-opt apparmor:unconfined \
            -v /sys:/sys:ro \
            -v /proc:/proc \
            -v /etc/passwd:/etc/passwd:ro \
