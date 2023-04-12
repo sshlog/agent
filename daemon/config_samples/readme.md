@@ -93,23 +93,25 @@ Actions are defined in the plugins/actions/ folder.  The required and options pa
 Below is a list of possible actions:
 
   - **webhook_action** - Send an HTTP POST or GET to a specified URL endpoint
-    Parameters: webhook_url, do_get_request=False
+     - Parameters: webhook_url, do_get_request=False
 
   - **statsd_action** - Send statsd metric data via UDP to the specified server and port
-    Parameters: server_address, port=8125, statsd_prefix='sshlog'
+     - Parameters: server_address, port=8125, statsd_prefix='sshlog'
 
   - **slack_action** - Post a Slack message to a configured Slack app/webhook URL
-    Parameters: slack_webhook_url
+     - Parameters: slack_webhook_url
 
   - **sessionlog_action** - Record all terminal activity to a log file
-    Parameters: log_directory, timestamp_frequency_seconds=-1)
+     - Parameters: log_directory, timestamp_frequency_seconds=-1)
 
   - **runcommand_action** - Run the specified executable
-    Parameters: command, args=[], timeout=None
+     - Parameters: command, args=[], timeout=None
 
   - **eventlogfile_action** - Record event activity to a log file
-    Parameters: log_file_path, output_json=False, max_size_mb=20, number_of_log_files=2
+     - Parameters: log_file_path, output_json=False, max_size_mb=20, number_of_log_files=2
 
   - **email_action** - Send an e-mail using the specified SMTP server
-    Parameters: sender, recipient, subject, body, smtp_server, smtp_port, username=None, password=None
+     - Parameters: sender, recipient, subject, body, smtp_server, smtp_port, username=None, password=None
 
+ - **syslog_action** - Post event data to a remote syslog server
+     - Parameters: server_address, port=514, program_name='sshlog', udp=True, output_json=False, facility=pysyslogclient.FAC_SYSTEM, severity=pysyslogclient.SEV_INFO
