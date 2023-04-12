@@ -1,6 +1,4 @@
 from plugins.common.plugin import ActionPlugin
-import requests
-import json
 import socket
 import datadog
 from comms.event_types import *
