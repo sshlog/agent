@@ -135,7 +135,7 @@ To create your own plug-ins, follow along with the [documentation and tutorial  
 
 ## Requirements
 
-  - \*Linux Kernel 5.5 or higher (released Jan 26 2020)
+  - \*Linux Kernel 5.4 or higher (released Nov 2019)
   - OpenSSH server 1.8.1 or higher
 
 \*SSHLog uses eBPF filters to monitor OpenSSH passively.  This technique requires a minimum Linux kernel version in order to function

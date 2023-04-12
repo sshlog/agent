@@ -10,6 +10,7 @@ from events.event_bus import eventbus_sshtrace_push
 from plugins.common.plugin_manager import PluginManager
 from comms.mq_base import PROC_LOCK_FILE
 from comms.pidlockfile import PIDLockFile, LockTimeout, AlreadyLocked
+import platform
 
 def run_main():
 
@@ -60,6 +61,21 @@ def run_main():
     # add ch to logger
     logger.addHandler(handler)
 
+    try:
+        MIN_KERNEL_VER_MAJOR = 5
+        MIN_KERNEL_VER_MINOR = 4
+        # Do a simple check on the kernel version.  Print a warning if it's too low, but allow to continue
+        kernel_ver = platform.uname().release.split('.')
+        major_ver = int(kernel_ver[0])
+        minor_ver = int(kernel_ver[1])
+
+        if major_ver < MIN_KERNEL_VER_MAJOR or (major_ver == MIN_KERNEL_VER_MAJOR and minor_ver < MIN_KERNEL_VER_MINOR):
+            # in case this is not a reliable way to detect compatibility, just log it and allow to continue,
+            # but this should make troubleshooting easier if it crashes
+            logger.warning(f"WARNING: Your kernel version ({major_ver}.{minor_ver}) "
+                  f"is less than the minimum required kernel version {MIN_KERNEL_VER_MAJOR}.{MIN_KERNEL_VER_MINOR}")
+    except:
+        pass
 
     # Create Tracker
     session_tracker = Tracker()
