@@ -65,17 +65,19 @@ Interact with the daemon via the CLI app:
 
 
 
-### Debian Install (arm64 and x86_64)
+### Debian/Ubuntu Install (arm64 and x86_64)
 
     apt update && apt install -y curl gnupg
     curl https://repo.sshlog.com/sshlog-ubuntu/public.gpg | gpg --yes --dearmor -o /usr/share/keyrings/repo-sshlog-ubuntu.gpg
     echo "deb [arch=any signed-by=/usr/share/keyrings/repo-sshlog-ubuntu.gpg] https://repo.sshlog.com/sshlog-ubuntu/ stable main" > /etc/apt/sources.list.d/repo-sshlog-ubuntu.list
     apt update && apt install -y sshlog
 
-### RedHat Install (arm64 and x86_64)
+
+
+### RedHat/Fedora Install (arm64 and x86_64)
 
     echo """
-    [sshlog-redhat-latest]
+    [sshlog-redhat]
     name=sshlog-redhat
     baseurl=https://repo.sshlog.com/sshlog-redhat
     enabled=1
