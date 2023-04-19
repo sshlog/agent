@@ -19,8 +19,9 @@ Install the daemon using the instructions for your OS (located below).  The defa
   1. Install and enable the "sshlogd" daemon on startup
   2. Install the "sshlog" CLI application
   3. Enable a number of default configuration files in /etc/sshlog/conf.d/
-    - Log all SSH events to: /var/log/sshlog/event.log
-    - Log all individual session activity (commands and output) to files in: /var/log/sshlog/sessions/
+
+    - Log contains all SSH events: /var/log/sshlog/event.log
+    - Log files contain all individual session activity (commands and output) in: /var/log/sshlog/sessions/
 
 ### After installation:
 
