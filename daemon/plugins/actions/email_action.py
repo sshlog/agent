@@ -24,8 +24,8 @@ class email_action(ActionPlugin):
 
     def execute(self, event_data):
         self.logger.info(f"{self.name} Email action triggered on {event_data['event_type']} Sending to {self.recipient}")
-        message = MIMEText(self.body)
-        message['Subject'] = self.subject
+        message = MIMEText(self._insert_event_data(event_data, self.body))
+        message['Subject'] = self._insert_event_data(event_data, self.subject)
         message['From'] = self.sender
         message['To'] = self.recipient
 
