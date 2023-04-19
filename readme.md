@@ -101,6 +101,7 @@ Interact with the daemon via the CLI app:
     docker run -d --restart=always --name sshlog \
            --privileged \
            -v /sys:/sys:ro \
+           -v /dev:/dev \
            -v /proc:/proc \
            -v /etc/passwd:/etc/passwd:ro \
            -v /var/log/sshlog:/var/log/sshlog \

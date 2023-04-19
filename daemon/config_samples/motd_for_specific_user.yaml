@@ -1,0 +1,14 @@
+# Description:
+# Sends a message to one specific user once they login
+
+events:
+  - event: mhill_logs_in
+    triggers: [ 'connection_established']
+    filters:
+      username: 'mhill' 
+      require_tty: True
+    actions:
+      - action: message_about_lunch_money
+        plugin: run_command_action
+        command: bash 
+        args: ["-c", "echo 'Hello {{username}} do not forget that $4.75 you owe me for lunch!' | write {{username}} /dev/pts/{{tty_id}}"]
