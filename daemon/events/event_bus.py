@@ -7,6 +7,7 @@ from comms.event_types import *
 import concurrent.futures
 import os
 import logging
+import socket
 
 logger = logging.getLogger('sshlog_daemon')
 
@@ -42,6 +43,10 @@ def eventbus_sshtrace_unsubscribe(callback, event_ids=None):
 
 def eventbus_sshtrace_push(event_data, session_tracker):
     event_type = event_data['event_type']
+    
+    # Apply the hostname to all events
+    event_data['hostname'] = socket.gethostname()
+
     # Attach connection data to events here
     if event_type == SSHTRACE_EVENT_COMMAND_START or event_type == SSHTRACE_EVENT_COMMAND_END or \
             event_type == SSHTRACE_EVENT_FILE_UPLOAD:
