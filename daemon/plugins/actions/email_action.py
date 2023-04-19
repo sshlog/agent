@@ -8,7 +8,7 @@ from email.mime.text import MIMEText
 
 class email_action(ActionPlugin):
 
-    def init_action(self, sender, recipient, subject, body, smtp_server, smtp_port, username=None, password=None):
+    def init_action(self, sender, recipient, subject, smtp_server, smtp_port, body='', username=None, password=None):
         self.sender = sender
         self.recipient = recipient
         self.subject = subject
