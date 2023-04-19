@@ -26,6 +26,8 @@ Install the daemon using the instructions for your OS (located below).  The defa
 
   - SSH into your server to generate some activity (e.g., ssh localhost).
   - Check log files in /var/log/sshlog/
+    - /var/log/sshlog/event.log will contain a list of all actions (e.g., logins/logouts, commands run, files uploaded, etc)
+    - /var/log/sshlog/sessions/ will contain the full shell terminal output, one file for each SSH session
   - Tip: Optionally add admin users to the "sshlog" group so that they can interact with SSHLog daemon without requiring sudo
   
 Interact with the daemon via the CLI app:
