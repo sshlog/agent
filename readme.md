@@ -12,6 +12,7 @@ SSHLog is a free, source-available Linux daemon written in C++ and Python that p
 
 SSHLog is configurable, any combination of features may be enabled, disabled, or customized.  It works with your existing OpenSSH server process, no alternative SSH daemon is required.  Just install the sshlog package to begin monitoring SSH.
 
+![SSHLog header](http://www.sshlog.com/assets/img/hero/hero-img.png) 
 
 ## Quick Start
 
