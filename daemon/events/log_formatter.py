@@ -39,11 +39,11 @@ class LogFormatter:
         elif event_data['event_type'] == SSHTRACE_EVENT_CLOSE_CONNECTION:
             str_format += f"{username_padded}from ip {self._client_ip_str(event_data)}"
         elif event_data['event_type'] == SSHTRACE_EVENT_COMMAND_START:
-            str_format += f"{username_padded}executed {event_data['args']}"
+            str_format += f"{username_padded}from ip {self._client_ip_str(event_data)} executed {event_data['args']}"
         elif event_data['event_type'] == SSHTRACE_EVENT_COMMAND_END:
-            str_format += f"{username_padded}execute complete (exit code: {event_data['exit_code']}) {event_data['args']}"
+            str_format += f"{username_padded}from ip {self._client_ip_str(event_data)} execute complete (exit code: {event_data['exit_code']}) {event_data['args']}"
         elif event_data['event_type'] == SSHTRACE_EVENT_FILE_UPLOAD:
-            str_format += f"{username_padded}uploaded file {event_data['target_path']}"
+            str_format += f"{username_padded}from ip {self._client_ip_str(event_data)} uploaded file {event_data['target_path']}"
         elif event_data['event_type'] == SSHTRACE_EVENT_TERMINAL_UPDATE:
             str_format += f"{username_padded}terminal update ({event_data['data_len']} bytes)"
 

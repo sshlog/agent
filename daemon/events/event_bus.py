@@ -55,9 +55,11 @@ def eventbus_sshtrace_push(event_data, session_tracker):
         if active_conn is not None:
             event_data['username'] = active_conn['username']
             event_data['tty_id'] = active_conn['tty_id']
+            event_data['tcp_info'] = active_conn['tcp_info']
         else:
             event_data['username'] = ''
             event_data['tty_id'] = ''
+
 
     logger.debug(event_data)
     # Skip some events that are pushed from the bpf library.  This is in order to simplify the data stream
