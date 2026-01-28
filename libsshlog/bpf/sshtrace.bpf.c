@@ -263,57 +263,6 @@ int sys_exit_accept(struct trace_event_raw_sys_exit* ctx) {
   return 0;
 }
 
-// TODO: This also works, and provides more information (server port and IP address)
-// But I do not like that it is less maintainable (i.e., it's a kernel probe instead of tracepoint)
-// SEC("kretprobe/inet_csk_accept")
-// int BPF_KRETPROBE(inet_csk_accept_ret, struct sock *newsk)
-// {
-
-// 	if (!proc_is_sshd())
-// 		return 1;
-
-// 	if (newsk == NULL)
-// 		return 0;
-
-// 	u64 pid_tgid = bpf_get_current_pid_tgid();
-// 	struct sshd_listener *listener;
-
-// 	if ((listener = get_sshd_listener()) == NULL)
-// 		return 1;
-
-// 	u16 family = 0;
-// 	bpf_core_read(&family, sizeof(family), &newsk->__sk_common.skc_family);
-
-// 	if (family == AF_INET)
-// 	{
-
-// 		u16 client_port = 0, server_port = 0;
-// 		u32 client_ip = 0, server_ip = 0;
-// 		bpf_core_read(&client_port, sizeof(client_port), &newsk->__sk_common.skc_dport);
-// 		bpf_core_read(&server_port, sizeof(server_port), &newsk->__sk_common.skc_num);
-// 		bpf_core_read(&client_ip, sizeof(client_ip), &newsk->__sk_common.skc_daddr);
-// 		bpf_core_read(&server_ip, sizeof(server_ip), &newsk->__sk_common.skc_rcv_saddr);
-
-// 		client_port = __builtin_bswap16(client_port);
-// 		client_ip = __builtin_bswap32(client_ip);
-// 		server_ip = __builtin_bswap32(server_ip);
-
-// 		// TODO, is there a race condition here?
-// 		// e.g., two SSH sessions happen around the same time and the connections get crossed...
-// 		// If so, recent_tcpinfo needs to be a global hash with some unique ID to differentiate.
-// 		listener->pid_tgid = pid_tgid;
-// 		listener->recent_tcpinfo.client_ip = client_ip;
-// 		listener->recent_tcpinfo.server_ip = server_ip;
-// 		listener->recent_tcpinfo.client_port = client_port;
-// 		listener->recent_tcpinfo.server_port = server_port;
-
-// 		log_printk("inet_csk_accept fd: %d %d %u", pid_tgid, client_port, server_port);
-// 	}
-
-// 	return 0;
-
-// }
-
 static bool is_ptm_clone(u64 pid_tgid) {
   struct socket_map* sockmap = bpf_map_lookup_elem(&socket_mapping, &pid_tgid);
 
