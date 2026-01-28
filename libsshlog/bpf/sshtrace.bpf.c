@@ -294,9 +294,10 @@ static void handle_new_connection(void* context, u32 sshd_tgid, u32 conn_tgid) {
   conn.rate_limit_hit = false;
   conn.rate_limit_total_bytes_this_second = 0;
 
-  // cleanup sockmap
-  bpf_map_delete_elem(&socket_mapping, &sshd_tgid);
+  // Initialize the IOPS counter
+  conn.rate_limit_events_this_second = 0;
 
+  bpf_map_delete_elem(&socket_mapping, &sshd_tgid);
   bpf_map_update_elem(&connections, &conn_tgid, &conn, BPF_ANY);
 
   // The PTM has been created now, go ahead and send the event
@@ -674,9 +675,14 @@ static int is_rate_limited(void* ctx, struct connection* conn, int32_t new_bytes
     conn->rate_limit_epoch_second = cur_epoch_sec;
     conn->rate_limit_hit = false;
     conn->rate_limit_total_bytes_this_second = 0;
+    // Reset IOPS counter
+    conn->rate_limit_events_this_second = 0;
   }
 
   conn->rate_limit_total_bytes_this_second += new_bytes;
+  conn->rate_limit_events_this_second++;
+
+  // 1. Check Bandwidth
   if (conn->rate_limit_total_bytes_this_second > (RATE_LIMIT_MAX_BYTES_PER_SECOND / TIME_INTERVALS_PER_SECOND)) {
     // Rate limit.  If limit has already been hit this second, just exit
     // if not, send an event message back with the rate limit message
@@ -698,6 +704,15 @@ static int is_rate_limited(void* ctx, struct connection* conn, int32_t new_bytes
     }
     return 1;
   }
+
+  // 2. Check Event Count (IOPS) - Stop tiny write floods
+  if (conn->rate_limit_events_this_second > RATE_LIMIT_MAX_EVENTS_PER_SECOND) {
+    if (!conn->rate_limit_hit) {
+      conn->rate_limit_hit = true;
+    }
+    return 1;
+  }
+
   return 0;
 }
 

@@ -45,6 +45,7 @@ typedef _Bool bool;
 #define USERNAME_MAX_LENGTH 32
 
 #define RATE_LIMIT_MAX_BYTES_PER_SECOND 1024000
+#define RATE_LIMIT_MAX_EVENTS_PER_SECOND 1000
 
 struct tcpinfo {
   uint32_t server_ip;
@@ -80,6 +81,7 @@ struct connection {
   int64_t rate_limit_epoch_second;
   bool rate_limit_hit;
   int64_t rate_limit_total_bytes_this_second;
+  uint64_t rate_limit_events_this_second;
 };
 
 // Must be a power of 2
