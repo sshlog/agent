@@ -4,7 +4,7 @@ option(BUILD_TESTS "Build test programs" OFF)
 option(USE_RINGBUF "Use more efficient Ringbuf for BPF comms, requires recent kernel" OFF)
 
 
-CPMAddPackage("gh:ibireme/yyjson#0.6.0")
+CPMAddPackage("gh:ibireme/yyjson#0.12.0")
 CPMAddPackage("gh:SergiusTheBest/plog#1.1.9")
 
 CPMAddPackage(
