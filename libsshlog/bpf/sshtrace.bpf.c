@@ -495,13 +495,13 @@ static int sys_enter_exec_common(struct trace_event_raw_sys_enter* ctx) {
   //bpf_core_read_str(cmd.filename, sizeof(cmd.filename), args->filename);
 
   // Read full filename and args data into map
-  u32 argoffset = 0;
 
   // Copy the filename first, this is the full path not just the filename from args
-  int bytes_read = argoffset = bpf_core_read_user_str(cmd->args, COMMAND_ARGS_MAX_BYTES, filename);
   log_printk("args copied bytes %d - %s", bytes_read, filename);
-  argoffset = argoffset & COMMAND_ARGS_MAX_BYTES - 1;
-  cmd->args[(argoffset - 1) & COMMAND_ARGS_MAX_BYTES - 1] = ' ';
+  int bytes_read = 0;
+  u32 argoffset = bpf_core_read_user_str(cmd->args, COMMAND_ARGS_MAX_BYTES, filename);
+  argoffset = argoffset & (COMMAND_ARGS_MAX_BYTES - 1);
+  cmd->args[(argoffset - 1) & (COMMAND_ARGS_MAX_BYTES - 1)] = ' ';
 
   for (u32 i = 1; i < sizeof(argv); i++) {
     char* argv_p = NULL;
@@ -517,16 +517,16 @@ static int sys_enter_exec_common(struct trace_event_raw_sys_enter* ctx) {
     if (bytes_read > 0) {
       argoffset += bytes_read;
       // Replace the '\0' with spaces between the args
-      cmd->args[(argoffset - 1) & COMMAND_ARGS_MAX_BYTES - 1] = ' ';
+      cmd->args[(argoffset - 1) & (COMMAND_ARGS_MAX_BYTES - 1)] = ' ';
     }
 
     // Prevent this value from being zero'd out when it is exactly max size
     if (argoffset != COMMAND_ARGS_MAX_BYTES)
-      argoffset = argoffset & COMMAND_ARGS_MAX_BYTES - 1;
+      argoffset = argoffset & (COMMAND_ARGS_MAX_BYTES - 1);
   }
   // Finalize string with '\0'
-  cmd->args[(argoffset - 1) & COMMAND_ARGS_MAX_BYTES - 1] = '\0';
   log_printk("args full %d - %s", argoffset, cmd->args);
+  cmd->args[(argoffset - 1) & (COMMAND_ARGS_MAX_BYTES - 1)] = '\0';
 
   bpf_map_update_elem(&commands, &current_tgid, cmd, BPF_ANY);
 
