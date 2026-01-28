@@ -205,7 +205,6 @@ int sys_enter_accept(struct trace_event_raw_sys_enter* ctx) {
   sockmap.recent_tcpinfo.client_port = 0;
   sockmap.recent_tcpinfo.server_port = 0;
 
-  uint32_t socket_id = (uint32_t) BPF_CORE_READ(ctx, args[0]);
   sockmap.addr = (struct sockaddr*) BPF_CORE_READ(ctx, args[1]);
   //int* addrlen = (int*) BPF_CORE_READ(ctx, args[2]);
 
@@ -482,8 +481,6 @@ int sys_enter_openat(struct trace_event_raw_sys_enter* ctx) {
       e->event_type = SSHTRACE_EVENT_FILE_UPLOAD;
       e->ptm_pid = conn->ptm_tgid;
       e->file_mode = mode;
-
-      const char* filename_ptr = (const char*) BPF_CORE_READ(ctx, args[1]);
       //static char filename[255];
       bpf_core_read_user_str(e->target_path, sizeof(e->target_path), ctx->args[1]);
 
@@ -840,9 +837,6 @@ int sys_enter_read(struct trace_event_raw_sys_enter* ctx) {
       if (is_rate_limited(ctx, conn, 0, parent_tgid)) {
         return 0;
       }
-      //const char* buf = (const char*) BPF_CORE_READ(ctx, args[1]);
-      size_t size = (size_t) BPF_CORE_READ(ctx, args[2]);
-
       struct read_buffer_map readmap = {0};
       readmap.fd = fd;
       readmap.data_ptr = (void*) ctx->args[1];
