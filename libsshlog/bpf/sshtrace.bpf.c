@@ -715,43 +715,9 @@ static int is_rate_limited(void* ctx, struct connection* conn, int32_t new_bytes
 
       e->event_type = SSHTRACE_EVENT_TERMINAL_UPDATE;
       e->ptm_pid = parent_tgid;
-      // Got to love the BPF verifier.  Simple strcpy is not so easy
-      e->terminal_data[0] = '[';
-      e->terminal_data[1] = '[';
-      e->terminal_data[2] = 'S';
-      e->terminal_data[3] = 'S';
-      e->terminal_data[4] = 'H';
-      e->terminal_data[5] = 'B';
-      e->terminal_data[6] = 'o';
-      e->terminal_data[7] = 'u';
-      e->terminal_data[8] = 'n';
-      e->terminal_data[9] = 'c';
-      e->terminal_data[10] = 'e';
-      e->terminal_data[11] = 'r';
-      e->terminal_data[12] = ' ';
-      e->terminal_data[13] = 'R';
-      e->terminal_data[14] = 'a';
-      e->terminal_data[15] = 't';
-      e->terminal_data[16] = 'e';
-      e->terminal_data[17] = '/';
-      e->terminal_data[18] = 's';
-      e->terminal_data[19] = 'e';
-      e->terminal_data[20] = 'c';
-      e->terminal_data[21] = ' ';
-      e->terminal_data[22] = 'R';
-      e->terminal_data[23] = 'e';
-      e->terminal_data[24] = 'a';
-      e->terminal_data[25] = 'c';
-      e->terminal_data[26] = 'h';
-      e->terminal_data[27] = 'e';
-      e->terminal_data[28] = 'd';
-      e->terminal_data[29] = ']';
-      e->terminal_data[30] = ']';
-      e->terminal_data[31] = '\r';
-      e->terminal_data[32] = '\n';
-      e->terminal_data[33] = '\0';
-      e->data_len = 34;
-
+      char msg[] = "[[SSHLog Rate/sec Reached]]\r\n";
+      __builtin_memcpy(e->terminal_data, msg, sizeof(msg));
+      e->data_len = sizeof(msg);
       push_event(ctx, e, sizeof(struct terminal_update_event));
     }
     return 1;
