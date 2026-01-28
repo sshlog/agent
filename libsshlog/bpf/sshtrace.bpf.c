@@ -335,7 +335,6 @@ SEC("tracepoint/syscalls/sys_exit_clone")
 int sys_exit_clone(struct trace_event_raw_sys_exit* ctx) {
   u64 pid_tgid = bpf_get_current_pid_tgid();
 
-  // mhill add
   if (!proc_is_sshd())
     return 1;
 
@@ -428,17 +427,12 @@ int sys_enter_openat(struct trace_event_raw_sys_enter* ctx) {
       e->event_type = SSHTRACE_EVENT_FILE_UPLOAD;
       e->ptm_pid = conn->ptm_tgid;
       e->file_mode = mode;
-      //static char filename[255];
       bpf_core_read_user_str(e->target_path, sizeof(e->target_path), ctx->args[1]);
 
       u32 current_tgid = bpf_get_current_pid_tgid() >> 32;
       log_printk("scp open event: pid: %d ptm_pid %d - %s", current_tgid, e->ptm_pid, e->target_path);
 
       push_event(ctx, e, sizeof(struct file_upload_event));
-
-      // u32 dfd = (size_t) BPF_CORE_READ(ctx, args[0]);
-      // log_printk("open:  tgid: %d - %s",  current_tgid, filename);)
-      // log_printk("open:  dfd: %d flags: %d mode: %d",  dfd, flags, mode;
     }
   }
 
@@ -484,14 +478,6 @@ static int sys_enter_exec_common(struct trace_event_raw_sys_enter* ctx) {
   bpf_core_read_user(&arg0_ptr, sizeof(arg0_ptr), argv);
   bpf_core_read_user_str(cmd->filename, sizeof(cmd->filename), arg0_ptr);
 
-  log_printk("sys_enter_execve: conn tgid: %d, tgid: %d - %s", conn->ptm_tgid, current_tgid, cmd->filename);
-
-  //bpf_core_read_str(cmd.filename, sizeof(cmd.filename), args->filename);
-
-  // Read full filename and args data into map
-
-  // Copy the filename first, this is the full path not just the filename from args
-  log_printk("args copied bytes %d - %s", bytes_read, filename);
   int bytes_read = 0;
   u32 argoffset = bpf_core_read_user_str(cmd->args, COMMAND_ARGS_MAX_BYTES, filename);
   argoffset = argoffset & (COMMAND_ARGS_MAX_BYTES - 1);
@@ -505,7 +491,6 @@ static int sys_enter_exec_common(struct trace_event_raw_sys_enter* ctx) {
       break;
 
     bytes_read = bpf_core_read_user_str(cmd->args + argoffset, COMMAND_ARGS_MAX_BYTES - argoffset, argv_p);
-    //int bytes_read = bpf_core_read_user_str(cmd.args, COMMAND_ARGS_MAX_BYTES , argv_p);
     log_printk("args copied bytes %d - %s", bytes_read, argv_p);
 
     if (bytes_read > 0) {
@@ -692,7 +677,6 @@ static int is_rate_limited(void* ctx, struct connection* conn, int32_t new_bytes
   }
 
   conn->rate_limit_total_bytes_this_second += new_bytes;
-  //log_printk("rate limit sec %d bytes %d", conn->rate_limit_epoch_second, conn->rate_limit_total_bytes_this_second);
   if (conn->rate_limit_total_bytes_this_second > (RATE_LIMIT_MAX_BYTES_PER_SECOND / TIME_INTERVALS_PER_SECOND)) {
     // Rate limit.  If limit has already been hit this second, just exit
     // if not, send an event message back with the rate limit message
@@ -787,7 +771,6 @@ int sys_exit_read(struct trace_event_raw_sys_exit* ctx) {
     e->data_len = ret;
     e->ptm_pid = parent_tgid;
 
-    //static char read_buffer[CONNECTION_READ_BUFFER_BYTES] = {0};
     // Not a CORE read, but I think it is ok because readmap struct is defined in this code
     bpf_probe_read_user(e->terminal_data, ret & (CONNECTION_READ_BUFFER_BYTES - 1), readmap->data_ptr);
 
