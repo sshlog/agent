@@ -314,9 +314,7 @@ static void handle_new_connection(void* context, u32 sshd_tgid, u32 conn_tgid) {
 }
 
 static bool is_pts_clone(u32 tgid) {
-  struct connection* conn;
-
-  conn = bpf_map_lookup_elem(&connections, &tgid);
+  struct connection* conn = bpf_map_lookup_elem(&connections, &tgid);
   if (conn == NULL)
     return false;
 
