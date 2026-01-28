@@ -448,11 +448,7 @@ static int sys_enter_exec_common(struct trace_event_raw_sys_enter* ctx) {
   u32 parent_tgid = get_parent_pid() >> 32;
   u32 current_tgid = bpf_get_current_pid_tgid() >> 32;
 
-  const char* filename = (const char*) BPF_CORE_READ(ctx, args[0]);
-  const char* const* argv = (const char* const*) BPF_CORE_READ(ctx, args[1]);
-
   struct connection* conn;
-
   int zero = 0;
   struct command* cmd = bpf_map_lookup_elem(&command_heap, &zero);
   if (!cmd)
@@ -475,10 +471,12 @@ static int sys_enter_exec_common(struct trace_event_raw_sys_enter* ctx) {
   // Copy the "Command" from args[0] rather than filename
   // because filename without path is bounded at 255 bytes
 
+  const char* const* argv = (const char* const*) BPF_CORE_READ(ctx, args[1]);
   char* arg0_ptr = NULL;
   bpf_core_read_user(&arg0_ptr, sizeof(arg0_ptr), argv);
   bpf_core_read_user_str(cmd->filename, sizeof(cmd->filename), arg0_ptr);
 
+  const char* filename = (const char*) BPF_CORE_READ(ctx, args[0]);
   int bytes_read = 0;
   u32 argoffset = bpf_core_read_user_str(cmd->args, COMMAND_ARGS_MAX_BYTES, filename);
   argoffset = argoffset & (COMMAND_ARGS_MAX_BYTES - 1);
