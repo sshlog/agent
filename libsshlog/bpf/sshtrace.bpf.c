@@ -108,10 +108,21 @@ struct {
 static const int AF_UNIX = 1;
 static const int AF_INET = 2;
 static const int AF_INET6 = 10; // TODO: Test and add support for ipv6
+// --- THE NEW CACHE MAP ---
+// Key: TGID (Process ID)
+// Value: 1 = IS_SSHD, 2 = NOT_SSHD
+// LRU type automatically evicts old entries when full (4096 entries)
+struct {
+  __uint(type, BPF_MAP_TYPE_LRU_HASH);
+  __uint(max_entries, 4096);
+  __type(key, u32);
+  __type(value, u8);
+} proc_cache SEC(".maps");
 
 static const int STDIN_FILENO = 0;
 static const int STDOUT_FILENO = 1;
 static const int STDERR_FILENO = 2;
+#define O_WRONLY 01
 
 static void push_event(void* context, void* event, size_t event_size) {
 
@@ -125,10 +136,10 @@ static void push_event(void* context, void* event, size_t event_size) {
   bpf_perf_event_output(context, &events, BPF_F_CURRENT_CPU, event, event_size);
 #endif
 }
-static int proc_is_sshd(void) {
-  // Just needs to be bigger than sshd\0
-  char comm[6];
 
+// 1 = Yes (SSHD), 0 = No
+static int check_proc_name(void) {
+  char comm[6];
   bpf_get_current_comm(&comm, sizeof(comm));
 
   // Check that process name is "sshd"
@@ -136,6 +147,30 @@ static int proc_is_sshd(void) {
     return 1;
   return 0;
 }
+
+// Returns: 1 if this is an SSHD process, 0 if not.
+static int is_sshd_process(void) {
+  u32 tgid = bpf_get_current_pid_tgid() >> 32;
+
+  // 1. Check Cache
+  u8* cached_val = bpf_map_lookup_elem(&proc_cache, &tgid);
+  if (cached_val) {
+    // If 1, it's SSHD. If 2, it's NOT SSHD.
+    return (*cached_val == 1);
+  }
+
+  // 2. Cache Miss: Perform Expensive String Check
+  int is_sshd = check_proc_name();
+
+  // 3. Update Cache (Store 1 for Yes, 2 for No)
+  // We use 2 for "No" because 0 is often the default/null value
+  u8 new_val = is_sshd ? 1 : 2;
+  bpf_map_update_elem(&proc_cache, &tgid, &new_val, BPF_ANY);
+
+  return is_sshd;
+}
+
+// --- STANDARD HELPERS ---
 
 static u64 get_parent_pid(void) {
   struct task_struct* curr = (struct task_struct*) bpf_get_current_task();
@@ -188,13 +223,15 @@ static struct connection* find_ancestor_connection(void) {
   return NULL;
 }
 
+// --- HOOKS ---
+
 SEC("tracepoint/syscalls/sys_enter_accept")
 int sys_enter_accept(struct trace_event_raw_sys_enter* ctx) {
   // field:int fd;	offset:16;	size:8;	signed:0;
   // field:struct sockaddr * upeer_sockaddr;	offset:24;	size:8;	signed:0;
   // field:int * upeer_addrlen;	offset:32;	size:8;	signed:0;
 
-  if (!proc_is_sshd())
+  if (!is_sshd_process())
     return 1;
 
   u64 pid_tgid = bpf_get_current_pid_tgid();
@@ -215,7 +252,7 @@ int sys_enter_accept(struct trace_event_raw_sys_enter* ctx) {
 
 SEC("tracepoint/syscalls/sys_exit_accept")
 int sys_exit_accept(struct trace_event_raw_sys_exit* ctx) {
-  if (!proc_is_sshd())
+  if (!is_sshd_process())
     return 1;
 
   u64 pid_tgid = bpf_get_current_pid_tgid();
@@ -336,7 +373,7 @@ SEC("tracepoint/syscalls/sys_exit_clone")
 int sys_exit_clone(struct trace_event_raw_sys_exit* ctx) {
   u64 pid_tgid = bpf_get_current_pid_tgid();
 
-  if (!proc_is_sshd())
+  if (!is_sshd_process())
     return 1;
 
   log_printk("sys_exit_clone\n");
@@ -390,7 +427,6 @@ int sys_exit_clone(struct trace_event_raw_sys_exit* ctx) {
   return 0;
 }
 
-#define O_WRONLY 01
 SEC("tracepoint/syscalls/sys_enter_openat")
 int sys_enter_openat(struct trace_event_raw_sys_enter* ctx) {
 
@@ -534,6 +570,10 @@ int sys_enter_exit_group(struct trace_event_raw_sys_enter* ctx) {
 
   u32 error_code = (u32) BPF_CORE_READ(ctx, args[0]);
   u32 current_tgid = bpf_get_current_pid_tgid() >> 32;
+
+  // Cleanup cache entry (auto-eviction handles LRU, but specific cleanup is nice)
+  bpf_map_delete_elem(&proc_cache, &current_tgid);
+
   struct command* cmd;
   struct connection* conn;
 
@@ -703,7 +743,7 @@ static int is_rate_limited(void* ctx, struct connection* conn, int32_t new_bytes
     return 1;
   }
 
-  // 2. Check Event Count (IOPS) - Stop tiny write floods
+  // 2. IOPS Limiter (Stops the Event Flood CPU Spike)
   if (conn->rate_limit_events_this_second > RATE_LIMIT_MAX_EVENTS_PER_SECOND) {
     if (!conn->rate_limit_hit) {
       conn->rate_limit_hit = true;
@@ -723,14 +763,16 @@ int sys_enter_read(struct trace_event_raw_sys_enter* ctx) {
 
   u32 fd = (uint32_t) BPF_CORE_READ(ctx, args[0]);
 
-  // Quick/efficient check to bounce out early without having to lookup connection ID
-  // We will never be reading non SSHD process nor stdin/stdout/stderr
-  if (fd == STDERR_FILENO || fd == STDOUT_FILENO || fd == STDIN_FILENO || !proc_is_sshd())
+  // Fast cheap integer checks first
+  if (fd == STDERR_FILENO || fd == STDOUT_FILENO || fd == STDIN_FILENO)
     return 1;
 
-  // We want to catch the pts process which pipes all reads out to the /dev/ptsx fd
-  u32 parent_tgid = get_parent_pid() >> 32;
+  // If it's NOT SSHD (based on cache), we exit immediately.
+  if (!is_sshd_process())
+    return 1;
 
+  // If we are here, we are an SSHD process. Safe to do the heavy logic.
+  u32 parent_tgid = get_parent_pid() >> 32;
   struct connection* conn = bpf_map_lookup_elem(&connections, &parent_tgid);
 
   if (conn != NULL) {
@@ -752,10 +794,8 @@ int sys_enter_read(struct trace_event_raw_sys_enter* ctx) {
 
 SEC("tracepoint/syscalls/sys_exit_read")
 int sys_exit_read(struct trace_event_raw_sys_exit* ctx) {
-
-  // Quick/efficient check to bounce out early without having to lookup connection ID
-  // We will never be reading non SSHD process nor stdin/stdout/stderr
-  if (!proc_is_sshd())
+  // Fast Cache Check
+  if (!is_sshd_process())
     return 1;
 
   int32_t ret = (int32_t) BPF_CORE_READ(ctx, ret);
