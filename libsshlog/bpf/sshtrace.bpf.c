@@ -455,12 +455,6 @@ static int sys_enter_exec_common(struct trace_event_raw_sys_enter* ctx) {
 
   const char* filename = (const char*) BPF_CORE_READ(ctx, args[0]);
   const char* const* argv = (const char* const*) BPF_CORE_READ(ctx, args[1]);
-  const char* const* envp = (const char* const*) BPF_CORE_READ(ctx, args[2]);
-
-  // FOR TROUBLESHOOTING
-  // static char fn[255] = {0};
-  // bpf_core_read_user_str(fn, sizeof(fn), filename);
-  // log_printk("sys_enter_execve: parent_tgid: %d, current_tgid: %d - %s", parent_tgid, current_tgid, fn);
 
   struct connection* conn;
 
