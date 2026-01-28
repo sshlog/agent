@@ -253,9 +253,15 @@ int sys_exit_accept(struct trace_event_raw_sys_exit* ctx)
 
 	struct socket_map* sockmap = bpf_map_lookup_elem(&socket_mapping, &pid_tgid);
 
+	// 1. Check if map lookup succeeded
+        if (sockmap == NULL)
+                return 1;
+
+	// 2. Now it is safe to read sockmap->addr
 	struct sockaddr* addr_peer = sockmap->addr;
 
-	if (sockmap == NULL || addr_peer == NULL)
+	// 3. Check if the internal pointer is valid
+	if (addr_peer == NULL)
 		return 1;
 
 	u32 sock_family = BPF_CORE_READ_USER(addr_peer, sa_family);
