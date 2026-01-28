@@ -661,11 +661,9 @@ int sys_enter_write(struct trace_event_raw_sys_enter* ctx) {
   // Need this check to get pass the bpf verifier (otherwise it complains about unbounded memory access)
   // Caveat is that STDOUT_MAX_BYTES MUST be a power of 2
   //if (proc_with_offset > proc_output && proc_with_offset < proc_output+amount_to_write)
-
-  offset = offset & STDOUT_MAX_BYTES - 1;
+  offset = offset & (STDOUT_MAX_BYTES - 1);
   char* proc_with_offset = cmd->stdout + offset;
-
-  amount_to_write = amount_to_write & STDOUT_MAX_BYTES - 1;
+  amount_to_write = amount_to_write & (STDOUT_MAX_BYTES - 1);
 
   //if (offset + amount_to_write < STDOUT_MAX_BYTES - 1 )
   bpf_core_read_user(proc_with_offset, amount_to_write, buf);
