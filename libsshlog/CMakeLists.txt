@@ -5,7 +5,7 @@ option(USE_RINGBUF "Use more efficient Ringbuf for BPF comms, requires recent ke
 
 
 CPMAddPackage("gh:ibireme/yyjson#0.12.0")
-CPMAddPackage("gh:SergiusTheBest/plog#1.1.9")
+CPMAddPackage("gh:SergiusTheBest/plog#1.1.11")
 
 CPMAddPackage(
   NAME pfs
