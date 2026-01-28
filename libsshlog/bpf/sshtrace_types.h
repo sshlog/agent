@@ -25,6 +25,16 @@
 #ifndef __clang__
 // Only include this for outside BPF code.  BPF code compiles w/ clang
 #include <stdint.h>
+#else
+// FIX: BPF (Clang) doesn't have stdint.h included, so we must define these manually.
+// Assuming vmlinux.h or similar provides basic C types, or standard primitives:
+typedef unsigned int uint32_t;
+typedef int int32_t;
+typedef unsigned short uint16_t;
+typedef short int16_t;
+typedef unsigned long long uint64_t;
+typedef long long int64_t;
+typedef _Bool bool;
 #endif
 
 // Read buffer bytes must be a power of 2
