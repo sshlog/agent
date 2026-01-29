@@ -121,6 +121,7 @@ add_library(sshlog SHARED
 )
 
 target_link_libraries(sshlog 
+  PRIVATE
   sshtrace_skel 
   ${LIBBPF_LIBRARIES}
   yyjson
@@ -148,3 +149,6 @@ endif()
 
 set_target_properties(sshlog PROPERTIES SOVERSION 1)
 install (TARGETS sshlog   DESTINATION    ${CMAKE_INSTALL_PREFIX}/lib)
+
+
+add_subdirectory(tests)
