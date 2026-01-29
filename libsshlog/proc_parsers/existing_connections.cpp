@@ -13,8 +13,8 @@
 namespace sshlog {
 
 #define SSHD_DEFAULT_PORT 22
-#define SSHD_PROCESS_NAME "sshd"
 
+static bool is_sshd_process(const std::string& comm);
 static bool is_pts(pfs::task& process, std::unordered_map<int32_t, pfs::task> processes);
 
 static int discover_sshd_listen_port(pfs::procfs& pfs, pfs::task& sshd_process);
@@ -44,7 +44,7 @@ ExistingConnections::ExistingConnections() {
     // after we list them but before we inspect them.
     // We must catch exceptions here to prevent the agent from crashing.
     try {
-      if (process.get_comm() != SSHD_PROCESS_NAME)
+      if (!is_sshd_process(process.get_comm()))
         continue;
 
       bool is_pts_target = is_pts(process, processes);
@@ -85,7 +85,8 @@ ExistingConnections::ExistingConnections() {
 
         int64_t boottime_diff =
             (ts_bt.tv_sec - ts_mt.tv_sec) * MILLIS_IN_A_SEC + (ts_bt.tv_nsec - ts_mt.tv_nsec) / NANOS_IN_A_MILLIS;
-        // PLOG_DEBUG << "existing connection millisecond adjustment: " << boottime_diff;
+        // PLOG_DEBUG << "existing connection millisecond adjustment: " <<
+        // boottime_diff;
 
         session.start_time -= (boottime_diff * NANOS_IN_A_MILLIS);
 
@@ -134,7 +135,8 @@ ExistingConnections::ExistingConnections() {
         this->sessions.push_back(session);
       }
     } catch (const std::exception& e) {
-      // Process likely exited during inspection. Use DEBUG log so we don't spam errors during stress tests.
+      // Process likely exited during inspection. Use DEBUG log so we don't spam
+      // errors during stress tests.
       PLOG_DEBUG << "Process vanished during inspection (race condition): " << e.what();
       continue;
     }
@@ -154,7 +156,7 @@ std::vector<struct ssh_session> ExistingConnections::get_sessions() { return thi
 static bool is_pts(pfs::task& process, std::unordered_map<int32_t, pfs::task> processes) {
   try {
     // Make sure target proc is sshd
-    if (process.get_comm() != SSHD_PROCESS_NAME)
+    if (!is_sshd_process(process.get_comm()))
       return false;
 
     // Make sure he has a parent
@@ -164,29 +166,42 @@ static bool is_pts(pfs::task& process, std::unordered_map<int32_t, pfs::task> pr
     if (processes.find(ppid) == processes.end())
       return false;
 
-    // Parent should also be "sshd"
+    // Parent should also be "sshd" or "sshd-session"
     pfs::task parent = processes.at(ppid);
 
     // Check parent details (can throw if parent died)
     int parent_ppid = parent.get_stat().ppid;
-    if (parent.get_comm() != SSHD_PROCESS_NAME || parent_ppid == 1)
+    if (!is_sshd_process(parent.get_comm()) || parent_ppid == 1)
       return false;
 
     if (processes.find(parent_ppid) == processes.end())
       return false;
 
-    // Grandparent should exist, and it's PPID should be 1
+    // Grandparent should exist
     pfs::task grandparent = processes.at(parent_ppid);
     int grandparent_ppid = grandparent.get_stat().ppid;
-    if (grandparent.get_comm() != SSHD_PROCESS_NAME || grandparent_ppid != 1)
+
+    if (!is_sshd_process(grandparent.get_comm()))
       return false;
 
-    return true;
+    if (grandparent_ppid == 1)
+      return true;
+
+    if (processes.find(grandparent_ppid) != processes.end()) {
+      pfs::task great_grandparent = processes.at(grandparent_ppid);
+      if (!is_sshd_process(great_grandparent.get_comm()))
+        return true;
+    }
+
+    return false;
   } catch (...) {
-    // Any failure to read proc files means this isn't a stable SSH session we can inspect
+    // Any failure to read proc files means this isn't a stable SSH session we
+    // can inspect
     return false;
   }
 }
+
+static bool is_sshd_process(const std::string& comm) { return comm == "sshd" || comm == "sshd-session"; }
 
 static int discover_sshd_listen_port(pfs::procfs& pfs, pfs::task& sshd_process) {
   try {

@@ -44,6 +44,8 @@ char LICENSE[] SEC("license") = "GPL";
 #define log_printk(fmt, args...)
 #endif
 
+#define IS_CMD(buf, str) (__builtin_memcmp(buf, str, sizeof(str)) == 0)
+
 #ifdef SSHTRACE_USE_RINGBUF
 // Ringbuf is more efficient but requires at least kernel version 5.8
 struct {
@@ -137,14 +139,15 @@ static void push_event(void* context, void* event, size_t event_size) {
 #endif
 }
 
-// 1 = Yes (SSHD), 0 = No
+// 1 = Yes (SSHD or sshd-session), 0 = No
 static int check_proc_name(void) {
-  char comm[6];
+  char comm[14];
   bpf_get_current_comm(&comm, sizeof(comm));
 
-  // Check that process name is "sshd"
-  if (comm[0] == 's' && comm[1] == 's' && comm[2] == 'h' && comm[3] == 'd' && comm[4] == '\0')
+  // Check the name of the command.  Either of these indicate an sshd session process
+  if (IS_CMD(comm, "sshd") || IS_CMD(comm, "sshd-session")) {
     return 1;
+  }
   return 0;
 }
 
@@ -438,8 +441,6 @@ int sys_enter_openat(struct trace_event_raw_sys_enter* ctx) {
   // Buffer for process name (16 is the kernel max for comms)
   char pname[16];
   bpf_get_current_comm(&pname, sizeof(pname));
-
-#define IS_CMD(buf, str) (__builtin_memcmp(buf, str, sizeof(str)) == 0)
 
   // Check the name of the command.  Either of these indicate a file upload
   if (!IS_CMD(pname, "scp") && !IS_CMD(pname, "sftp-server")) {
