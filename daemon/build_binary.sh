@@ -12,7 +12,7 @@ if [[ -f dist/sshlog && -f dist/sshlogd ]]; then
     exit 0
 fi
 
-rm -Rf /tmp/sshlog_venv 2>/dev/null
+#rm -Rf /tmp/sshlog_venv 2>/dev/null
 virtualenv /tmp/sshlog_venv
 source /tmp/sshlog_venv/bin/activate
 pip3 install -r ${SCRIPT_DIR}/requirements.txt 
