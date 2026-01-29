@@ -435,13 +435,14 @@ int sys_enter_openat(struct trace_event_raw_sys_enter* ctx) {
   // field:int flags;        offset:32;      size:8; signed:0;
   // field:umode_t mode;     offset:40;      size:8; signed:0;
 
-  // Just needs to be bigger than scp\0
-  char pname[5];
-
+  // Buffer for process name (16 is the kernel max for comms)
+  char pname[16];
   bpf_get_current_comm(&pname, sizeof(pname));
 
-  // Check that process name is "scp"
-  if (pname[0] != 's' || pname[1] != 'c' || pname[2] != 'p' || pname[3] != '\0') {
+#define IS_CMD(buf, str) (__builtin_memcmp(buf, str, sizeof(str)) == 0)
+
+  // Check the name of the command.  Either of these indicate a file upload
+  if (!IS_CMD(pname, "scp") && !IS_CMD(pname, "sftp-server")) {
     return 0;
   }
 
@@ -450,7 +451,6 @@ int sys_enter_openat(struct trace_event_raw_sys_enter* ctx) {
   u32 gparent_tgid = get_grandparent_pid() >> 32;
   struct connection* conn = bpf_map_lookup_elem(&connections, &gparent_tgid);
   if (conn != NULL) {
-
     u32 flags = (size_t) BPF_CORE_READ(ctx, args[2]);
 
     if (flags & O_WRONLY) {
