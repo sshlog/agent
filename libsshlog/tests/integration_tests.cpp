@@ -19,6 +19,7 @@
 const std::string SSH_HOST = "127.0.0.1";
 const std::string SSH_USER = "mhill";
 const std::string SSH_KEY = "/home/mhill/.ssh/id_rsa";
+const std::string SSH_ARGS = "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null";
 
 // --- HELPER: UUID GENERATOR ---
 std::string generate_uuid() {
@@ -246,7 +247,7 @@ TEST_CASE("SSHLog Library Integration (Strict JSON)", "[lib]") {
 
   SECTION("New Connection Detection") {
     INFO("Connecting to " << SSH_HOST);
-    std::string cmd = "ssh -o StrictHostKeyChecking=no -i " + SSH_KEY + " " + SSH_USER + "@" + SSH_HOST + " 'exit'";
+    std::string cmd = "ssh " + SSH_ARGS + " -i " + SSH_KEY + " " + SSH_USER + "@" + SSH_HOST + " 'exit'";
     std::system(cmd.c_str());
 
     INFO("Parsing JSON for event_type: 'connection_new'");
@@ -266,8 +267,7 @@ TEST_CASE("SSHLog Library Integration (Strict JSON)", "[lib]") {
     std::string cmd_str = "ls " + token;
     INFO("Running: " << cmd_str);
 
-    std::string cmd =
-        "ssh -o StrictHostKeyChecking=no -i " + SSH_KEY + " " + SSH_USER + "@" + SSH_HOST + " '" + cmd_str + "'";
+    std::string cmd = "ssh " + SSH_ARGS + " -i " + SSH_KEY + " " + SSH_USER + "@" + SSH_HOST + " '" + cmd_str + "'";
     std::system(cmd.c_str());
 
     INFO("Parsing JSON for 'command_start' with token: " << token);
@@ -305,8 +305,8 @@ TEST_CASE("SSHLog Library Integration (Strict JSON)", "[lib]") {
     std::system("echo 'payload' > /tmp/sshlog_dummy");
 
     INFO("Uploading to " << remote_path);
-    std::string cmd = "scp -o StrictHostKeyChecking=no -i " + SSH_KEY + " /tmp/sshlog_dummy " + SSH_USER + "@" +
-                      SSH_HOST + ":" + remote_path;
+    std::string cmd =
+        "scp " + SSH_ARGS + " -i " + SSH_KEY + " /tmp/sshlog_dummy " + SSH_USER + "@" + SSH_HOST + ":" + remote_path;
     std::system(cmd.c_str());
 
     INFO("Parsing JSON for 'file_upload' with path: " << remote_path);
@@ -337,8 +337,8 @@ TEST_CASE("SSHLog Advanced Features", "[lib]") {
 
     // Use -o BatchMode=yes -o PasswordAuthentication=no to fail immediately without prompt
     // We attempt to log in as a non-existent user or just fail auth
-    std::string cmd = "ssh -o BatchMode=yes -o StrictHostKeyChecking=no -o PasswordAuthentication=no baduser@" +
-                      SSH_HOST + " 'exit' 2>/dev/null";
+    std::string cmd = "ssh -o BatchMode=yes -o " + SSH_ARGS + " -o PasswordAuthentication=no baduser@" + SSH_HOST +
+                      " 'exit' 2>/dev/null";
 
     // We expect the command to fail (ret != 0)
     int ret = std::system(cmd.c_str());
@@ -358,8 +358,7 @@ TEST_CASE("SSHLog Advanced Features", "[lib]") {
     INFO("Running command that generates specific output: " << token);
 
     // We run a command that prints the token to stdout
-    std::string cmd =
-        "ssh -o StrictHostKeyChecking=no -i " + SSH_KEY + " " + SSH_USER + "@" + SSH_HOST + " 'ls " + token + "'";
+    std::string cmd = "ssh " + SSH_ARGS + " -i " + SSH_KEY + " " + SSH_USER + "@" + SSH_HOST + " 'ls " + token + "'";
     std::system(cmd.c_str());
 
     INFO("Waiting for 'command_finish' with stdout containing token");
@@ -385,8 +384,8 @@ TEST_CASE("SSHLog Advanced Features", "[lib]") {
     // for the output, even if we don't send keystrokes manually.
     std::string unique_output = "TERM_DATA_" + generate_uuid();
 
-    std::string cmd = "ssh -tt -o StrictHostKeyChecking=no -i " + SSH_KEY + " " + SSH_USER + "@" + SSH_HOST +
-                      " 'echo " + unique_output + "; exit'";
+    std::string cmd = "ssh -tt " + SSH_ARGS + " -i " + SSH_KEY + " " + SSH_USER + "@" + SSH_HOST + " 'echo " +
+                      unique_output + "; exit'";
     std::system(cmd.c_str());
 
     INFO("Waiting for 'terminal_update' containing output");
@@ -407,8 +406,8 @@ TEST_CASE("SSHLog Advanced Features", "[lib]") {
     INFO("Running nested command: sh -c 'ls " << token << "'");
 
     // We run 'sh -c ls' to create a parent-child relationship (sshd -> sh -> ls)
-    std::string cmd = "ssh -o StrictHostKeyChecking=no -i " + SSH_KEY + " " + SSH_USER + "@" + SSH_HOST +
-                      " 'sh -c \"ls " + token + "\"'";
+    std::string cmd =
+        "ssh " + SSH_ARGS + " -i " + SSH_KEY + " " + SSH_USER + "@" + SSH_HOST + " 'sh -c \"ls " + token + "\"'";
     std::system(cmd.c_str());
 
     INFO("Waiting for the child 'ls' command event");
