@@ -5,7 +5,7 @@
 from dataclasses import dataclass
 import dataclasses
 from dataclasses_json import dataclass_json
-from typing import List
+from typing import List, Dict, Any
 import json
 from uuid import uuid4
 
@@ -89,7 +89,7 @@ class KillSessionRequestDto:
 @dataclass(frozen=True)
 class EventWatchResponseDto:
     event_type: str
-    payload_json: str
+    payload_json: Dict[str, Any]
     payload_type: int = EVENT_WATCH_RESPONSE
 
 
@@ -107,8 +107,8 @@ class SessionDto:
     pts_pid: int
     shell_pid: int
     tty_id: int
-    start_time: str
-    end_time: str
+    start_time: int
+    end_time: int
     last_activity_time: int
     last_command: str
     user_id: int
