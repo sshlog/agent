@@ -23,15 +23,8 @@ RUN apt-get update && apt-get install -y \
     && ln -s /usr/bin/clang-19 /usr/bin/clang \
     && rm -rf /var/lib/apt/lists/*
 
+
 WORKDIR /source
-
-# Copy the daemon source code and prep the python build env
-COPY daemon/ ./daemon/
-RUN rm -Rf /tmp/sshlog_venv 2>/dev/null && \
-    virtualenv /tmp/sshlog_venv && \
-    source /tmp/sshlog_venv/bin/activate && \
-    pip3 install -r daemon/requirements.txt
-
 
 # Copy the library source code
 COPY CMakeLists.txt .
@@ -55,6 +48,14 @@ RUN make install DESTDIR=${INSTALL_TARGET_DIR}
 #     cp libsshlog/sshlog_cli ${INSTALL_TARGET_DIR}/usr/bin/
 
 WORKDIR /source
+
+# Copy the daemon source code and prep the python build env
+COPY daemon/ ./daemon/
+RUN rm -Rf /tmp/sshlog_venv 2>/dev/null && \
+    virtualenv /tmp/sshlog_venv && \
+    source /tmp/sshlog_venv/bin/activate && \
+    pip3 install -r daemon/requirements.txt
+
 
 RUN daemon/build_binary.sh && \
     mkdir -p ${INSTALL_TARGET_DIR}/usr/bin/ && cp dist/* ${INSTALL_TARGET_DIR}/usr/bin/ && \
