@@ -40,6 +40,7 @@ HTML_TEMPLATE = """
         #terminal-container { flex-grow: 1; background: #000; padding: 10px; border-radius: 5px; overflow: hidden; }
         .close-btn { background: #dc3545; }
         .close-btn:hover { background: #a71d2a; }
+        .watching-row { background-color: #e2e6ea; }
     </style>
 </head>
 <body>
@@ -90,13 +91,15 @@ HTML_TEMPLATE = """
                     }
                     var html = '<table><tr><th>User</th><th>PID</th><th>TTY</th><th>Client IP</th><th>Age</th><th>Action</th></tr>';
                     data.forEach(s => {
-                        html += `<tr>
+                        const isWatching = (s.ptm_pid == currentPtmPid);
+                        const rowClass = isWatching ? 'class="watching-row"' : '';
+                        html += `<tr ${rowClass}>
                             <td>${s.user}</td>
                             <td>${s.ptm_pid}</td>
                             <td>${s.tty_id}</td>
                             <td>${s.client_ip}</td>
-                            <td><button onclick="watchSession(${s.ptm_pid})">Join / Watch</button></td>
                             <td>${formatDuration(s.start_time)}</td>
+                            <td><button onclick="watchSession(${s.ptm_pid})" ${isWatching ? 'disabled' : ''}>${isWatching ? 'Watching...' : 'Join / Watch'}</button></td>
                         </tr>`;
                     });
                     html += '</table>';
@@ -108,6 +111,7 @@ HTML_TEMPLATE = """
 
         function watchSession(ptmPid) {
             currentPtmPid = ptmPid;
+            refreshSessions();
             document.getElementById('terminal-wrapper').style.display = 'flex';
             
             if (term) term.dispose();
@@ -148,6 +152,7 @@ HTML_TEMPLATE = """
             if (term) term.dispose();
             currentPtmPid = -1;
             window.removeEventListener('resize', fitTerminal);
+            refreshSessions();
         }
 
         socket.on('term_output', function(msg) {
