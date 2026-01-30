@@ -61,6 +61,18 @@ HTML_TEMPLATE = """
             refreshSessions();
         });
 
+        function formatDuration(ms) {
+            if (!ms) return '-';
+            let seconds = Math.floor((Date.now() - ms) / 1000);
+            if (seconds < 0) seconds = 0;
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = seconds % 60;
+            if (h > 0) return `${h}h ${m}m`;
+            if (m > 0) return `${m}m ${s}s`;
+            return `${s}s`;
+        }
+
         function refreshSessions() {
             fetch('/api/sessions')
                 .then(response => response.json())
@@ -69,7 +81,7 @@ HTML_TEMPLATE = """
                         document.getElementById('session-list').innerHTML = '<p>No active SSH sessions.</p>';
                         return;
                     }
-                    var html = '<table><tr><th>User</th><th>PID</th><th>TTY</th><th>Client IP</th><th>Action</th></tr>';
+                    var html = '<table><tr><th>User</th><th>PID</th><th>TTY</th><th>Client IP</th><th>Age</th><th>Action</th></tr>';
                     data.forEach(s => {
                         html += `<tr>
                             <td>${s.user}</td>
@@ -77,6 +89,7 @@ HTML_TEMPLATE = """
                             <td>${s.tty_id}</td>
                             <td>${s.client_ip}</td>
                             <td><button onclick="watchSession(${s.ptm_pid})">Join / Watch</button></td>
+                            <td>${formatDuration(s.start_time)}</td>
                         </tr>`;
                     });
                     html += '</table>';
@@ -199,7 +212,8 @@ class SSHLogWebServer:
                     'user': s['username'],
                     'ptm_pid': s['ptm_pid'],
                     'tty_id': s['tty_id'],
-                    'client_ip': s['tcp_info']['client_ip']
+                    'client_ip': s['tcp_info']['client_ip'],
+                    'start_time': s.get('start_time')
                 })
         except Exception as e:
             logger.error(f"Error listing sessions: {e}")
