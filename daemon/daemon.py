@@ -21,26 +21,28 @@ def run_main():
 
     parser = argparse.ArgumentParser(description="SSHLog Daemon")
 
-    parser.add_argument("-l", "--logfile", default=None, help='Path to log file')
+    parser.add_argument("-l", "--logfile", default=os.environ.get('SSHLOG_LOGFILE', None), help='Path to log file')
 
     parser.add_argument(
         '--debug',
         action='store_true',
+        default=os.environ.get('SSHLOG_DEBUG', '').lower() in ('true', '1', 'yes'),
         help='Print debug info'
     )
     parser.add_argument(
         '--enable-diagnostic-web',
         action='store_true',
+        default=os.environ.get('SSHLOG_ENABLE_DIAGNOSTIC_WEB', '').lower() in ('true', '1', 'yes'),
         help='Enable the diagnostic web interface'
     )
     parser.add_argument(
         '--diagnostic-web-ip',
-        default='127.0.0.1',
+        default=os.environ.get('SSHLOG_DIAGNOSTIC_WEB_IP', '127.0.0.1'),
         help='Binding IP for the diagnostic web interface (default: 127.0.0.1)'
     )
     parser.add_argument(
         '--diagnostic-web-port',
-        default=5000,
+        default=int(os.environ.get('SSHLOG_DIAGNOSTIC_WEB_PORT', 5000)),
         type=int,
         help='Port for the diagnostic web interface (default: 5000)'
     )
