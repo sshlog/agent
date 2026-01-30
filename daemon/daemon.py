@@ -23,10 +23,6 @@ def run_main():
 
     parser.add_argument("-l", "--logfile", default=None, help='Path to log file')
 
-    # parser.add_argument("-k", "--key", default=os.getenv('OPENREPO_APIKEY', ''), help='API key')
-    # parser.add_argument("-s", "--server", default=os.getenv('OPENREPO_SERVER', 'http://localhost:7376'),
-    #                     help="OpenRepo Server")
-
     parser.add_argument(
         '--debug',
         action='store_true',
