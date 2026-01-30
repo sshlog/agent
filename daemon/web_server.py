@@ -4,6 +4,13 @@ import json
 import os
 from functools import wraps
 from flask import Flask, render_template_string, jsonify, request, Response
+import simple_websocket
+# Explicitly import the threading driver to ensure PyInstaller bundles it
+try:
+    import engineio.async_drivers.threading
+except ImportError:
+    pass
+
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from comms.mq_client import MQClient
 from comms.dtos import ShellSendKeysRequestDto
@@ -181,7 +188,7 @@ class SSHLogWebServer:
         self.host = host
         self.port = port
         self.app = Flask(__name__)
-        self.socketio = SocketIO(self.app, cors_allowed_origins="*")
+        self.socketio = SocketIO(self.app, cors_allowed_origins="*", async_mode='threading')
         self.mq_client = MQClient()
         
         self.app.add_url_rule('/', 'index', requires_auth(self.index))
