@@ -24,6 +24,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       # Set up QEMU for multi-arch builds (arm64/amd64)
       - name: Set up QEMU
