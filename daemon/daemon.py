@@ -46,6 +46,12 @@ def run_main():
         type=int,
         help='Port for the diagnostic web interface (default: 5000)'
     )
+    parser.add_argument(
+        '--enable-session-injection',
+        action='store_true',
+        default=os.environ.get('SSHLOG_ENABLE_SESSION_INJECTION', '').lower() in ('true', '1', 'yes'),
+        help='Enable command injection into active sessions (default: False)'
+    )
 
     args = parser.parse_args()
 
@@ -120,16 +126,17 @@ def run_main():
 
 
     # Spin up local MQ server to start listening
-    server = MQLocalServer(session_tracker)
+    server = MQLocalServer(session_tracker, enable_injection=args.enable_session_injection)
     server.start()
 
     # Start the Web Server
     web_server = None
     if args.enable_diagnostic_web:
-        web_server = SSHLogWebServer(session_tracker, host=args.diagnostic_web_ip, port=args.diagnostic_web_port)
+        web_server = SSHLogWebServer(session_tracker, host=args.diagnostic_web_ip, 
+                                     port=args.diagnostic_web_port, enable_session_injection=args.enable_session_injection)
         web_server.start()
 
-    with SSHLog(loglevel=0) as sshb:
+    with SSHLog(loglevel=0, enable_injection=args.enable_session_injection) as sshb:
 
         try:
             while sshb.is_ok():

@@ -53,7 +53,9 @@ HTML_TEMPLATE = """
     <div id="terminal-wrapper">
         <div style="margin-bottom: 10px; display: flex; align-items: center;">
             <button class="close-btn" onclick="closeTerminal()">Close Terminal</button>
-            <label style="margin-left: 15px;"><input type="checkbox" id="readonly-mode" checked> Read-Only Mode</label>
+            <label style="margin-left: 15px;" {% if not injection_enabled %}title="Session injection is disabled in the daemon configuration for security."{% endif %}>
+                <input type="checkbox" id="readonly-mode" checked {% if not injection_enabled %}disabled{% endif %}> Read-Only Mode
+            </label>
         </div>
         <div id="terminal-container"></div>
     </div>
@@ -188,10 +190,11 @@ def requires_auth(f):
     return decorated
 
 class SSHLogWebServer:
-    def __init__(self, session_tracker, host='127.0.0.1', port=5000):
+    def __init__(self, session_tracker, host='127.0.0.1', port=5000, enable_session_injection=False):
         self.session_tracker = session_tracker
         self.host = host
         self.port = port
+        self.enable_session_injection = enable_session_injection
         self.app = Flask(__name__)
         self.socketio = SocketIO(self.app, cors_allowed_origins="*", async_mode='threading')
         self.mq_client = MQClient()
@@ -213,7 +216,7 @@ class SSHLogWebServer:
         self.socketio.run(self.app, host=self.host, port=self.port, use_reloader=False, log_output=False)
 
     def index(self):
-        return render_template_string(HTML_TEMPLATE)
+        return render_template_string(HTML_TEMPLATE, injection_enabled=self.enable_session_injection)
 
     def get_sessions(self):
         sessions = []
@@ -252,6 +255,11 @@ class SSHLogWebServer:
                     'ptm_pid': ptm_pid,
                     'data': self.buffers[ptm_pid]
                 })
+
+            # Block keystrokes if injection is disabled
+            if keys and not self.enable_session_injection:
+                logger.warning(f"Keystroke injection attempted for PID {ptm_pid} but is disabled.")
+                return
 
             # Use the internal MQ client to send keystrokes to the daemon's MQ server
             dto = ShellSendKeysRequestDto(ptm_pid=ptm_pid, keys=keys, force_redraw=force_redraw)
