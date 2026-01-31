@@ -31,7 +31,13 @@ ExternalProject_Add(libbpf
   PREFIX libbpf
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libbpf/src
   CONFIGURE_COMMAND ""
-  BUILD_COMMAND make
+  # Step 1: Just Build
+  BUILD_COMMAND make -j$(nproc)
+    BUILD_STATIC_ONLY=1
+    CPPFLAGS=-fPIC
+    OBJDIR=${CMAKE_CURRENT_BINARY_DIR}/libbpf/libbpf
+  # Step 2: Install
+  INSTALL_COMMAND make 
     BUILD_STATIC_ONLY=1
     CPPFLAGS=-fPIC
     OBJDIR=${CMAKE_CURRENT_BINARY_DIR}/libbpf/libbpf
@@ -41,7 +47,6 @@ ExternalProject_Add(libbpf
     UAPIDIR=
     install install_uapi_headers
   BUILD_IN_SOURCE TRUE
-  INSTALL_COMMAND ""
   STEP_TARGETS build
 )
 
@@ -55,7 +60,9 @@ ExternalProject_Add(bpftool
   PREFIX bpftool
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bpftool/src
   CONFIGURE_COMMAND ""
-  BUILD_COMMAND make bootstrap
+  BUILD_COMMAND make -j$(nproc) bootstrap
+    feature-libelf=1
+    feature-zlib=1
     OUTPUT=${CMAKE_CURRENT_BINARY_DIR}/bpftool/
   BUILD_IN_SOURCE TRUE
   INSTALL_COMMAND ""
