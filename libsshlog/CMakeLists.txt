@@ -56,22 +56,8 @@ else ()
     set (X86 FALSE)
 endif ()
 
-ExternalProject_Add(bpftool
-  PREFIX bpftool
-  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bpftool/src
-  CONFIGURE_COMMAND ""
-  BUILD_COMMAND make -j$(nproc) bootstrap
-    feature-libelf=1
-    feature-zlib=1
-    OUTPUT=${CMAKE_CURRENT_BINARY_DIR}/bpftool/
-  BUILD_IN_SOURCE TRUE
-  INSTALL_COMMAND ""
-  STEP_TARGETS build
-)
-
 set(LIBBPF_INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/libbpf)
 set(LIBBPF_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libbpf/libbpf.a)
-set(BPFOBJECT_BPFTOOL_EXE ${CMAKE_CURRENT_BINARY_DIR}/bpftool/bootstrap/bpftool)
 
 if (X86)
   message("-- BPF Using x86 vmlinux.h file")
@@ -113,7 +99,7 @@ if(USE_RINGBUF)
 endif()
 
 bpf_object(sshtrace bpf/sshtrace.bpf.c)
-add_dependencies(sshtrace_skel libbpf-build bpftool-build)
+add_dependencies(sshtrace_skel libbpf-build )
 
 set(sshlog_SRC
   sshlog.cpp

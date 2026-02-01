@@ -35,10 +35,6 @@ COPY CMakeLists.txt .
 COPY libsshlog/ ./libsshlog/
 COPY cmake/ ./cmake/
 
-# 2. Remove 'bpftool-build' dependency so CMake doesn't try to compile the submodule
-RUN sed -i 's|${CMAKE_CURRENT_BINARY_DIR}/bpftool/bootstrap/bpftool|/usr/sbin/bpftool|g' CMakeLists.txt && \
-    sed -i 's|bpftool-build||g' CMakeLists.txt
-
 WORKDIR /source/build
 
 # Use RelWithDebInfo for optimized but debuggable binaries
