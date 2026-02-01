@@ -35,7 +35,7 @@ docker run --privileged \
   -v /sys/kernel/debug:/sys/kernel/debug:rw \
   -v /etc/sshlog:/etc/sshlog \
   --net=host --pid=host \
-  --rm -it ghcr.io/sshlog/agent:v1.1.0
+  --rm -it ghcr.io/sshlog/agent:1.1.0
 ```
 
 **Note:** This mode enables the diagnostic web server on port 5000 and allows writing to SSH sessions.
@@ -91,7 +91,7 @@ docker run -d --restart=always --name sshlog \
   -v /var/log/sshlog:/var/log/sshlog \
   -v /etc/sshlog:/etc/sshlog \
   --net=host --pid=host \
-  ghcr.io/sshlog/agent:v1.1.0
+  ghcr.io/sshlog/agent:1.1.0
 ```
 
 ## Security Implications
