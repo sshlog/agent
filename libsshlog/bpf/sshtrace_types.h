@@ -25,6 +25,16 @@
 #ifndef __clang__
 // Only include this for outside BPF code.  BPF code compiles w/ clang
 #include <stdint.h>
+#else
+// FIX: BPF (Clang) doesn't have stdint.h included, so we must define these manually.
+// Assuming vmlinux.h or similar provides basic C types, or standard primitives:
+typedef unsigned int uint32_t;
+typedef int int32_t;
+typedef unsigned short uint16_t;
+typedef short int16_t;
+typedef unsigned long long uint64_t;
+typedef long long int64_t;
+typedef _Bool bool;
 #endif
 
 // Read buffer bytes must be a power of 2
@@ -35,6 +45,7 @@
 #define USERNAME_MAX_LENGTH 32
 
 #define RATE_LIMIT_MAX_BYTES_PER_SECOND 1024000
+#define RATE_LIMIT_MAX_EVENTS_PER_SECOND 1000
 
 struct tcpinfo {
   uint32_t server_ip;
@@ -70,6 +81,7 @@ struct connection {
   int64_t rate_limit_epoch_second;
   bool rate_limit_hit;
   int64_t rate_limit_total_bytes_this_second;
+  uint64_t rate_limit_events_this_second;
 };
 
 // Must be a power of 2

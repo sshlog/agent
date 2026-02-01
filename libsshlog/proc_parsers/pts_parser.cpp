@@ -137,8 +137,10 @@ void PtsParser::find_user_id(int32_t pid) {
 }
 
 static std::string getUser(uid_t uid) {
-  struct passwd* pws;
-  pws = getpwuid(uid);
+  struct passwd* pws = getpwuid(uid);
+  if (pws == nullptr)
+    return std::to_string(uid);
+
   return pws->pw_name;
 }
 

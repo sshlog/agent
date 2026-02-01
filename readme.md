@@ -12,31 +12,47 @@ SSHLog is a free, source-available Linux daemon written in C++ and Python that p
 
 SSHLog is configurable, any combination of features may be enabled, disabled, or customized.  It works with your existing OpenSSH server process, no alternative SSH daemon is required.  Just install the sshlog package to begin monitoring SSH.
 
-![SSHLog header](http://www.sshlog.com/assets/img/hero/hero-img.png) 
+![SSHLog header](assets/sshlog_header.png) 
 
-## Quick Start
+## Quick Start (Docker)
 
-Install the daemon using the instructions for your OS (located below).  The default installation will:
-  1. Install and enable the "sshlogd" daemon on startup
-  2. Install the "sshlog" CLI application
-  3. Enable a number of default configuration files in /etc/sshlog/conf.d/
+SSHLog is designed to run as a privileged Docker container.
 
-    - /var/log/sshlog/event.log contains all SSH events: 
-    - /var/log/sshlog/sessions/ log files contains all individual session activity (commands and output)
+### 1. Try it out (Diagnostic Mode)
 
-### After installation:
+To quickly test SSHLog with the web interface and session injection enabled, run:
 
-  - SSH into your server to generate some activity (e.g., ssh localhost).
-  - Check log files in /var/log/sshlog/
-    - /var/log/sshlog/event.log will contain a list of all actions (e.g., logins/logouts, commands run, files uploaded, etc)
-    - /var/log/sshlog/sessions/ will contain the full shell terminal output, one file for each SSH session
-  - Tip: Optionally add admin users to the "sshlog" group so that they can interact with SSHLog daemon without requiring sudo
-  
-Interact with the daemon via the CLI app:
+```bash
+docker run --privileged \
+  -e SSHLOG_ENABLE_DIAGNOSTIC_WEB=1 \
+  -e SSHLOG_ENABLE_SESSION_INJECTION=1 \
+  -v /usr/src:/usr/src:ro \
+  -v /lib/modules:/lib/modules:ro \
+  -v /var/log/btmp:/var/log/btmp:ro \
+  -v /etc/passwd:/etc/passwd:ro \
+  -v /etc/group:/etc/group:ro \
+  -v /dev/pts:/dev/pts:rw \
+  -v /sys/kernel/debug:/sys/kernel/debug:rw \
+  -v /etc/sshlog:/etc/sshlog \
+  --net=host --pid=host \
+  --rm -it ghcr.io/sshlog/agent:v1.1.0
+```
+
+**Note:** This mode enables the diagnostic web server on port 5000 and allows writing to SSH sessions.
+
+### 2. Web Interface
+
+Once running, access the dashboard at `http://<server-ip>:5000`.
+
+![Web Interface Demo](assets/webserver_demo.gif)
+
+### 3. CLI Usage
+
+You can interact with the daemon via the CLI app inside the container:
 
 #### Show current logged in sessions:
 
-    mhill@devlaptop:~$ sshlog sessions
+    docker exec -it sshlog sshlog sessions
       
      User        Last Activity             Last Command               Session Start              Client IP           TTY
     mhill           just now              /usr/bin/gcc             2023-04-10 16:16:18        127.0.0.1:58668         17
@@ -45,73 +61,44 @@ Interact with the daemon via the CLI app:
 
 #### Monitor real-time SSH activity
 
-    mhill@devlaptop:~$ sshlog watch
+    docker exec -it sshlog sshlog watch
     
     16:16:45 connection_established (970236) billy from ip 15.12.5.8:59120 tty 33
     16:16:45 command_start          (970236) billy executed /bin/bash
-    16:16:49 command_start          (970236) billy executed /usr/bin/whoami
-    16:16:49 command_finish         (970236) billy execute complete (exit code: 0) /usr/bin/whoami
-    16:16:51 command_start          (970236) billy executed /usr/bin/sudo ls
-    16:16:54 command_start          (970236) billy executed /usr/bin/ls
-    16:16:54 command_finish         (970236) billy execute complete (exit code: 0) /usr/bin/ls
-    16:16:54 command_finish         (970236) billy execute complete (exit code: 0) /usr/bin/sudo ls
-    16:16:56 command_finish         (970236) billy execute complete (exit code: 0) /bin/bash
-    16:16:56 connection_close       (970236) billy from ip 15.12.5.8:59120
+    ...
 
 #### Attach to another user's shell session (either read-only or interactive)
 
-    mhill@devlaptop:~$ sshlog attach [TTY ID]
+    docker exec -it sshlog sshlog attach [TTY ID]
 
-    Attached to TTY 32.  Press CTRL+Q to exit
+## Production Deployment
 
-    billy@devlaptop:~$ 
+For production use, we recommend locking down the container:
+*   Disable the web server (remove `SSHLOG_ENABLE_DIAGNOSTIC_WEB`)
+*   Disable session injection (remove `SSHLOG_ENABLE_SESSION_INJECTION`)
+*   Mount `/dev/pts` as read-only
 
+```bash
+docker run -d --restart=always --name sshlog \
+  --privileged \
+  -v /usr/src:/usr/src:ro \
+  -v /lib/modules:/lib/modules:ro \
+  -v /var/log/btmp:/var/log/btmp:ro \
+  -v /etc/passwd:/etc/passwd:ro \
+  -v /etc/group:/etc/group:ro \
+  -v /dev/pts:/dev/pts:ro \
+  -v /sys/kernel/debug:/sys/kernel/debug:rw \
+  -v /var/log/sshlog:/var/log/sshlog \
+  -v /etc/sshlog:/etc/sshlog \
+  --net=host --pid=host \
+  ghcr.io/sshlog/agent:v1.1.0
+```
 
+## Security Implications
 
+**Warning:** This container requires `--privileged` mode and `--pid=host` to monitor SSH processes via eBPF. This grants the container significant access to the host system.
 
-### Debian/Ubuntu Install (arm64 and x86_64)
-
-    apt update && apt install -y curl gnupg
-    curl https://repo.sshlog.com/sshlog-ubuntu/public.gpg | gpg --yes --dearmor -o /usr/share/keyrings/repo-sshlog-ubuntu.gpg
-    echo "deb [arch=any signed-by=/usr/share/keyrings/repo-sshlog-ubuntu.gpg] https://repo.sshlog.com/sshlog-ubuntu/ stable main" > /etc/apt/sources.list.d/repo-sshlog-ubuntu.list
-    apt update && apt install -y sshlog
-
-
-
-### RedHat/Fedora Install (arm64 and x86_64)
-
-    echo """
-    [sshlog-redhat]
-    name=sshlog-redhat
-    baseurl=https://repo.sshlog.com/sshlog-redhat
-    enabled=1
-    repo_gpgcheck=1
-    gpgkey=https://repo.sshlog.com/sshlog-redhat/public.gpg
-    """ > /etc/yum.repos.d/sshlog-redhat.repo
-    yum update && yum install sshlog
-
-### Docker Install (x86_64)
-
-    # First, copy the default configuration files to the host /etc/sshlog directory
-    # This step is unnecessary if you're using your own custom configuration
-    id=$(docker create sshlog/agent:latest)
-    docker cp $id:/etc/sshlog - > /tmp/sshlog_default_config.tar
-    tar xvf  /tmp/sshlog_default_config.tar -C /etc/
-    docker rm -v $id
-
-    # Next create a detached container and volume mount 
-    # the config files (/etc/sshlog) and output log files (/var/log/sshlog)
-    # you could place the config files and log file volume mounts elsewhere if you prefer
-    docker run -d --restart=always --name sshlog \
-           --privileged \
-           -v /sys:/sys:ro \
-           -v /dev:/dev \
-           -v /proc:/proc \
-           -v /etc/passwd:/etc/passwd:ro \
-           -v /var/log/sshlog:/var/log/sshlog \
-           -v /etc/sshlog:/etc/sshlog \
-           --pid=host \
-           sshlog/agent:latest
+When `SSHLOG_ENABLE_SESSION_INJECTION` is enabled, the container has the ability to inject keystrokes into any active SSH session on the host. Ensure access to this container and the Docker socket is strictly controlled.
 
 
 

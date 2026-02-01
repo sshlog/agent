@@ -75,7 +75,7 @@ class MQLocalServer(threading.Thread):
     Acts as a server to receive requests from client process (sshlog)
     responds with data that client can display to CLI
     '''
-    def __init__(self, session_tracker: Tracker,
+    def __init__(self, session_tracker: Tracker, enable_injection=False,
                  group=None, target=None, name=None, args=(), kwargs=None):
 
         super(MQLocalServer,self).__init__(group=group, target=target,
@@ -85,6 +85,7 @@ class MQLocalServer(threading.Thread):
         self.response_queue = queue.Queue()
         self.active_streams = ActiveStreams()
         self._stay_alive = True
+        self.enable_injection = enable_injection
 
 
 
@@ -165,10 +166,14 @@ class MQLocalServer(threading.Thread):
                 logger.debug("Redrawing shell via SIGWINCH")
                 os.kill(session['shell_pid'], SIGWINCH)
 
-            # Write the text char-by-char to the TTY output using ioctl
-            with open(f'/dev/pts/{tty_id}', 'w') as tty_out:
-                for key in request_message.dto_payload.keys:
-                    fcntl.ioctl(tty_out, termios.TIOCSTI, key.encode('utf-8'))
+            if request_message.dto_payload.keys:
+                if self.enable_injection:
+                    # Write the text char-by-char to the TTY output using ioctl
+                    with open(f'/dev/pts/{tty_id}', 'w') as tty_out:
+                        for key in request_message.dto_payload.keys:
+                            fcntl.ioctl(tty_out, termios.TIOCSTI, key.encode('utf-8'))
+                else:
+                    logger.warning(f"Injection disabled. Ignoring request for PTM PID {ptm_pid}")
 
 
 
@@ -179,5 +184,3 @@ class MQLocalServer(threading.Thread):
 
     def stay_alive(self):
         return self._stay_alive
-
-

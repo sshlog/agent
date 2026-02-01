@@ -4,8 +4,8 @@ option(BUILD_TESTS "Build test programs" OFF)
 option(USE_RINGBUF "Use more efficient Ringbuf for BPF comms, requires recent kernel" OFF)
 
 
-CPMAddPackage("gh:ibireme/yyjson#0.6.0")
-CPMAddPackage("gh:SergiusTheBest/plog#1.1.9")
+CPMAddPackage("gh:ibireme/yyjson#0.12.0")
+CPMAddPackage("gh:SergiusTheBest/plog#1.1.11")
 
 CPMAddPackage(
   NAME pfs
@@ -31,7 +31,13 @@ ExternalProject_Add(libbpf
   PREFIX libbpf
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libbpf/src
   CONFIGURE_COMMAND ""
-  BUILD_COMMAND make
+  # Step 1: Just Build
+  BUILD_COMMAND make -j$(nproc)
+    BUILD_STATIC_ONLY=1
+    CPPFLAGS=-fPIC
+    OBJDIR=${CMAKE_CURRENT_BINARY_DIR}/libbpf/libbpf
+  # Step 2: Install
+  INSTALL_COMMAND make 
     BUILD_STATIC_ONLY=1
     CPPFLAGS=-fPIC
     OBJDIR=${CMAKE_CURRENT_BINARY_DIR}/libbpf/libbpf
@@ -41,7 +47,6 @@ ExternalProject_Add(libbpf
     UAPIDIR=
     install install_uapi_headers
   BUILD_IN_SOURCE TRUE
-  INSTALL_COMMAND ""
   STEP_TARGETS build
 )
 
@@ -51,20 +56,8 @@ else ()
     set (X86 FALSE)
 endif ()
 
-ExternalProject_Add(bpftool
-  PREFIX bpftool
-  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bpftool/src
-  CONFIGURE_COMMAND ""
-  BUILD_COMMAND make bootstrap
-    OUTPUT=${CMAKE_CURRENT_BINARY_DIR}/bpftool/
-  BUILD_IN_SOURCE TRUE
-  INSTALL_COMMAND ""
-  STEP_TARGETS build
-)
-
 set(LIBBPF_INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/libbpf)
 set(LIBBPF_LIBRARIES ${CMAKE_CURRENT_BINARY_DIR}/libbpf/libbpf.a)
-set(BPFOBJECT_BPFTOOL_EXE ${CMAKE_CURRENT_BINARY_DIR}/bpftool/bootstrap/bpftool)
 
 if (X86)
   message("-- BPF Using x86 vmlinux.h file")
@@ -106,7 +99,7 @@ if(USE_RINGBUF)
 endif()
 
 bpf_object(sshtrace bpf/sshtrace.bpf.c)
-add_dependencies(sshtrace_skel libbpf-build bpftool-build)
+add_dependencies(sshtrace_skel libbpf-build )
 
 set(sshlog_SRC
   sshlog.cpp
@@ -121,6 +114,7 @@ add_library(sshlog SHARED
 )
 
 target_link_libraries(sshlog 
+  PRIVATE
   sshtrace_skel 
   ${LIBBPF_LIBRARIES}
   yyjson
@@ -148,3 +142,6 @@ endif()
 
 set_target_properties(sshlog PROPERTIES SOVERSION 1)
 install (TARGETS sshlog   DESTINATION    ${CMAKE_INSTALL_PREFIX}/lib)
+
+
+add_subdirectory(tests)

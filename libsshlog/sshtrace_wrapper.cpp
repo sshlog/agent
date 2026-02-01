@@ -166,18 +166,19 @@ char* SSHTraceWrapper::poll(int timeout_ms) {
     q.enqueue(json_data);
   }
 
-  const int MICROSEC_IN_A_MILLISEC = 1000;
   char* obj;
-  bool success = q.wait_dequeue_timed(obj, timeout_ms * MICROSEC_IN_A_MILLISEC);
+
+  // Check queue once. Non-blocking.
+  bool success = q.try_dequeue(obj);
 
   if (!success) {
-    PLOG_VERBOSE << "Polling for data...";
+    // If the queue is empty, we MUST sleep to yield the CPU.
+    // 10ms is a good balance for a log agent (unnoticeable lag, near 0% CPU).
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     return nullptr;
   }
 
   return obj;
-  // char *themem = (char *)malloc(100);
-  // return themem;
 }
 
 void SSHTraceWrapper::queue_event(void* event_struct) {

@@ -15,21 +15,42 @@ from plugins.common.plugin_manager import PluginManager
 from comms.mq_base import PROC_LOCK_FILE
 from comms.pidlockfile import PIDLockFile, LockTimeout, AlreadyLocked
 import platform
+from web_server import SSHLogWebServer
 
 def run_main():
 
     parser = argparse.ArgumentParser(description="SSHLog Daemon")
 
-    parser.add_argument("-l", "--logfile", default=None, help='Path to log file')
-
-    # parser.add_argument("-k", "--key", default=os.getenv('OPENREPO_APIKEY', ''), help='API key')
-    # parser.add_argument("-s", "--server", default=os.getenv('OPENREPO_SERVER', 'http://localhost:7376'),
-    #                     help="OpenRepo Server")
+    parser.add_argument("-l", "--logfile", default=os.environ.get('SSHLOG_LOGFILE', None), help='Path to log file')
 
     parser.add_argument(
         '--debug',
         action='store_true',
+        default=os.environ.get('SSHLOG_DEBUG', '').lower() in ('true', '1', 'yes'),
         help='Print debug info'
+    )
+    parser.add_argument(
+        '--enable-diagnostic-web',
+        action='store_true',
+        default=os.environ.get('SSHLOG_ENABLE_DIAGNOSTIC_WEB', '').lower() in ('true', '1', 'yes'),
+        help='Enable the diagnostic web interface'
+    )
+    parser.add_argument(
+        '--diagnostic-web-ip',
+        default=os.environ.get('SSHLOG_DIAGNOSTIC_WEB_IP', '127.0.0.1'),
+        help='Binding IP for the diagnostic web interface (default: 127.0.0.1)'
+    )
+    parser.add_argument(
+        '--diagnostic-web-port',
+        default=int(os.environ.get('SSHLOG_DIAGNOSTIC_WEB_PORT', 5000)),
+        type=int,
+        help='Port for the diagnostic web interface (default: 5000)'
+    )
+    parser.add_argument(
+        '--enable-session-injection',
+        action='store_true',
+        default=os.environ.get('SSHLOG_ENABLE_SESSION_INJECTION', '').lower() in ('true', '1', 'yes'),
+        help='Enable command injection into active sessions (default: False)'
     )
 
     args = parser.parse_args()
@@ -105,8 +126,15 @@ def run_main():
 
 
     # Spin up local MQ server to start listening
-    server = MQLocalServer(session_tracker)
+    server = MQLocalServer(session_tracker, enable_injection=args.enable_session_injection)
     server.start()
+
+    # Start the Web Server
+    web_server = None
+    if args.enable_diagnostic_web:
+        web_server = SSHLogWebServer(session_tracker, host=args.diagnostic_web_ip, 
+                                     port=args.diagnostic_web_port, enable_session_injection=args.enable_session_injection)
+        web_server.start()
 
     with SSHLog(loglevel=0) as sshb:
 
@@ -115,6 +143,8 @@ def run_main():
                 event_data = sshb.poll(timeout_ms=15)
                 if event_data is not None:
                     eventbus_sshtrace_push(event_data, session_tracker)
+                    if web_server:
+                        web_server.process_event(event_data)
         except KeyboardInterrupt:
             pass
 
@@ -135,4 +165,3 @@ if __name__ == "__main__":
         print(f"Error: sshlog daemon is already running.  To force process to run, delete {PROC_LOCK_FILE}")
     except PermissionError:
         print(f"Permission denied accessing file {PROC_LOCK_FILE}")
-
