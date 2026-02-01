@@ -136,7 +136,7 @@ def run_main():
                                      port=args.diagnostic_web_port, enable_session_injection=args.enable_session_injection)
         web_server.start()
 
-    with SSHLog(loglevel=0, enable_injection=args.enable_session_injection) as sshb:
+    with SSHLog(loglevel=0) as sshb:
 
         try:
             while sshb.is_ok():
