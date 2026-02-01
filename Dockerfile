@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
     cmake \
     git \
     clang-19 \
-    llvm \
+    llvm-19 \
     libelf-dev \
     libbpf-dev \
     pkg-config \
@@ -20,22 +20,28 @@ RUN apt-get update && apt-get install -y \
     bison \
     python3-docutils \
     python3-virtualenv \
+    bpftool \
+    libcap-dev \
     && ln -s /usr/bin/clang-19 /usr/bin/clang \
+    && ln -s /usr/bin/llvm-strip-19 /usr/bin/llvm-strip \
     && rm -rf /var/lib/apt/lists/*
-
 
 WORKDIR /source
 
 # Copy the library source code
+
+# Copy Source
 COPY CMakeLists.txt .
 COPY libsshlog/ ./libsshlog/
 COPY cmake/ ./cmake/
 
+# 2. Remove 'bpftool-build' dependency so CMake doesn't try to compile the submodule
+RUN sed -i 's|${CMAKE_CURRENT_BINARY_DIR}/bpftool/bootstrap/bpftool|/usr/sbin/bpftool|g' CMakeLists.txt && \
+    sed -i 's|bpftool-build||g' CMakeLists.txt
 
-# Create build directory and compile
 WORKDIR /source/build
 
-
+# Use RelWithDebInfo for optimized but debuggable binaries
 RUN cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo \
           -DCMAKE_INSTALL_PREFIX=/usr \
           -DCMAKE_INSTALL_SYSCONFDIR=/etc .. \
@@ -47,6 +53,7 @@ RUN make install DESTDIR=${INSTALL_TARGET_DIR}
 # RUN mkdir -p ${INSTALL_TARGET_DIR}/usr/bin/ && \
 #     cp libsshlog/sshlog_cli ${INSTALL_TARGET_DIR}/usr/bin/
 
+# Install Configs & Scripts
 WORKDIR /source
 
 # Copy the daemon source code and prep the python build env
@@ -73,11 +80,14 @@ FROM debian:bookworm-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install runtime dependencies
+# Install Runtime Dependencies
+# Added 'gdb' for debugging
 RUN apt-get update && apt-get install -y \
     libelf1 \
     libbpf1 \
+    libcap2 \
     ca-certificates \
+    gdb \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the compiled artifacts
