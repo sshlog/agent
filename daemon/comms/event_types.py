@@ -1,9 +1,7 @@
-# Copyright 2023- by Open Kilt LLC. All rights reserved.
+# Copyright 2026- by CHMOD 700 LLC. All rights reserved.
 # This file is part of the SSHLog Software (SSHLog)
-# Licensed under the Redis Source Available License 2.0 (RSALv2)
+# Licensed under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3 (AGPLv3)
 
-
-# These constants are defined in libsshlog sshtrace_events.h and mapped to strings in event_serializer.cpp
 SSHTRACE_EVENT_ESTABLISHED_CONNECTION = 'connection_established'
 SSHTRACE_EVENT_CLOSE_CONNECTION = 'connection_close'
 SSHTRACE_EVENT_AUTH_FAILED_CONNECTION = 'connection_auth_failed'

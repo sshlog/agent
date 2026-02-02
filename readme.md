@@ -1,6 +1,6 @@
 # sshlog
 
-SSHLog is a free, source-available Linux daemon written in C++ and Python that passively monitors OpenSSH servers via eBPF to:
+SSHLog is a free, open source Linux daemon written in C++ and Python that passively monitors OpenSSH servers via eBPF to:
 
   - **Record all SSH session activity** (commands and output) to log files for any connecting user
   - Allow administrators to **share an SSH session** with any logged in user
