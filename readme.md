@@ -26,6 +26,8 @@ To quickly test SSHLog with the web interface and session injection enabled, run
 docker run --privileged \
   -e SSHLOG_ENABLE_DIAGNOSTIC_WEB=1 \
   -e SSHLOG_ENABLE_SESSION_INJECTION=1 \
+  -e SSHLOG_WEB_USER=admin \
+  -e SSHLOG_WEB_PASS=admin \
   -v /usr/src:/usr/src:ro \
   -v /lib/modules:/lib/modules:ro \
   -v /var/log/btmp:/var/log/btmp:ro \
